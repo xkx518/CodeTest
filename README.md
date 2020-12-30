@@ -61,7 +61,8 @@ C:\Windows\System32\drivers\etc\hosts
 
 
 ### :open_file_folder:使用示例
-[超链接名](超链接地址 "超链接title")
+#### :FOFA收集链接
+
 
 
 
