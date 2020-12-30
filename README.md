@@ -58,6 +58,41 @@ C:\Windows\System32\drivers\etc\hosts
 ```
 
 
+### :checkered_flag:编写模板
+#### POC
+
+```
+def check(**kwargs):
+	url = kwargs['url']#/*str*/
+	port = kwargs['port']#/*str*/
+	print('输出结果')
+	print(url)
+	print(port)
+	if True:
+		return 1
+	else:
+		return
+```
+
+
+#### EXP
+
+```
+import CodeTest
+CodeTest.VULN = None
+
+def check(**kwargs):
+    if CodeTest.VULN == None:
+        ExpApacheShiro = ApacheShiro(_urlparse(kwargs['url']),"echo VuLnEcHoPoCSuCCeSS")
+    else:
+        ExpApacheShiro = ApacheShiro(_urlparse(kwargs['url']),kwargs['cmd'])
+    if kwargs['pocname'] == "cve_2016_4437":
+        ExpApacheShiro.cve_2016_4437()
+    else:
+        ExpApacheShiro.cve_2016_4437()
+```
+
+
 ### :clipboard:界面介绍
 #### 漏洞扫描界面
 ![漏洞扫描界面](https://github.com/xkx518/CodeTest/blob/master/img/1.png "漏洞扫描界面")
@@ -105,3 +140,4 @@ C:\Windows\System32\drivers\etc\hosts
 
 >当然，你也可以选择测试所有模块
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/13.png "FOFA")
+
