@@ -5,3 +5,6 @@ exp10it
 Crypto
 click
 pycryptodome
+jsbeautifier
+requests-toolbelt
+ajpy
