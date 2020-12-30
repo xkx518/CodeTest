@@ -67,7 +67,7 @@ C:\Windows\System32\drivers\etc\hosts
 
 
 ### :open_file_folder:使用示例
-#### ：FOFA收集链接
+#### 1：FOFA收集链接
 >FOFA脚本主要是根据"FOFA语法"收集链接
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/3.png "FOFA")
 
@@ -81,7 +81,7 @@ C:\Windows\System32\drivers\etc\hosts
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/6.png "FOFA")
 
 
-#### ：JSFind+URLSEO
+#### 2：JSFind+URLSEO
 >JSFind旨在从JS文件中找到网站相关链接
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/7.png "FOFA")
 
@@ -93,14 +93,14 @@ C:\Windows\System32\drivers\etc\hosts
 
 
 
-#### ：shiro漏洞检测和命令执行
+#### 3：shiro漏洞检测和命令执行
 >命令执行一般是在此界面进行配置，配置好目的地址和测试的模块即可开始测试，下述图片显示目标存在shiro漏洞
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/10.png "FOFA")
 
->修改上一步获取到的key和gadget，***特别注意：通过修改VULN的值为True和None，来选择该模块的功能是测试还是用于执行命令***
+>修改上一步获取到的key和gadget，***特别注意：通过修改VULN的值为True或None，来选择模块的功能是测试还是用于执行命令***
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/11.png "FOFA")
 
->保存，重新载入后属于需要执行的命令，即可输出命令执行的结果
+>保存，重新载入后输入需要执行的命令，即可输出命令执行的结果
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/12.png "FOFA")
 
 >当然，你也可以选择测试所有模块
