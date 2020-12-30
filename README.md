@@ -61,7 +61,23 @@ C:\Windows\System32\drivers\etc\hosts
 
 
 ### :open_file_folder:使用示例
-#### :FOFA收集链接
+#### ：FOFA收集链接
+>FOFA脚本主要是根据"FOFA语法"收集链接
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/3.png "FOFA")
+
+>非登录情况下，只能收集一页数据，通过获取登录后的session字段，即可获取五页数据
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/4.png "FOFA")
+
+>修改请求session
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/5.png "FOFA")
+
+>获取更多结果
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/6.png "FOFA")
+
+#### ：JSFind+URlSEO
+
+
+#### ：shiro漏洞检测和命令执行
 
 
 
