@@ -30,7 +30,8 @@ pythonw3 CodeTest.pyw
 ```
 
 ### :clipboard:界面介绍
-[超链接名](超链接地址 "超链接title")
+![漏洞扫描界面](https://github.com/xkx518/CodeTest/blob/master/img/1.png "漏洞扫描界面")
+![漏洞利用界面](https://github.com/xkx518/CodeTest/blob/master/img/2.png "漏洞利用界面")
 
 
 ### :open_file_folder:使用示例
