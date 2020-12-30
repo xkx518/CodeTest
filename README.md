@@ -58,7 +58,7 @@ C:\Windows\System32\drivers\etc\hosts
 ```
 
 
-### :checkered_flag:编写模板
+### :checkered_flag:模板
 #### POC
 
 ```
@@ -79,6 +79,9 @@ def check(**kwargs):
 
 ```
 import CodeTest
+from ClassCongregation import _urlparse
+#VULN = None => 漏洞测试
+#VULN = True => 命令执行
 CodeTest.VULN = None
 
 def check(**kwargs):
