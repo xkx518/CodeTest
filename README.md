@@ -1,5 +1,6 @@
 <h1 align="center" >Welcome to CodeTest</h1>
 
+
 ### :point_right:关于本项目
 
 >本项目的主要目的：针对日常收集的Python POC\EXP测试脚本，使用可视化界面统一执行入口，方便运行。
@@ -8,12 +9,14 @@
 >
 >可视化界面开发库：Tkinter
 
+
 ### :bulb:POC\EXP 参考链接
 
 ```
 https://github.com/Ascotbe/Medusa
 https://github.com/zhzyker/vulmap
 ```
+
 
 ### :book:使用说明
 
@@ -54,9 +57,12 @@ C:\Windows\System32\drivers\etc\hosts
  # GitHub End
 ```
 
+
 ### :clipboard:界面介绍
+#### 漏洞扫描界面
 ![漏洞扫描界面](https://github.com/xkx518/CodeTest/blob/master/img/1.png "漏洞扫描界面")
 
+#### 漏洞利用界面
 ![漏洞利用界面](https://github.com/xkx518/CodeTest/blob/master/img/2.png "漏洞利用界面")
 
 
@@ -74,7 +80,17 @@ C:\Windows\System32\drivers\etc\hosts
 >获取更多结果
 ![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/6.png "FOFA")
 
-#### ：JSFind+URlSEO
+
+#### ：JSFind+URLSEO
+>JSFind旨在从JS文件中找到网站相关链接
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/7.png "FOFA")
+
+>此处可批量测试多个地址（支持文件导入和直接粘贴复制）
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/8.png "FOFA")
+
+>勾选URLSEO，批量返回目标地址的状态码和Title
+![FOFA](https://github.com/xkx518/CodeTest/blob/master/img/9.png "FOFA")
+
 
 
 #### ：shiro漏洞检测和命令执行
