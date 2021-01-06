@@ -30,10 +30,13 @@ def spider(urls,time):
             charset = "gb2312"
         #print(charset)
         soup = BeautifulSoup(req.text, 'lxml') #创建 beautifulsoup 对象
-        content = "S= {} ,T= {}".format(req.status_code,
-                                        soup.title.string.encode(charset, errors='ignore').decode(charset))[:54]
+        content = "{},{}".format(req.status_code,
+                                        soup.title.string.encode(charset, errors='ignore').decode(charset))[:13]
     except AttributeError as e:
-        return "S= {} ,T= {}".format(req.status_code,None)[:55]
+        return "{},{}".format(req.status_code,None)[:10]
+    except Exception as ConnectTimeout:
+        print('请求 %s 超时'%urls)
+        return None
     except Exception as e:
         print('请求 %s 出现异常 %s'%(urls,type(e)))
         return None
@@ -60,6 +63,18 @@ if __name__ == "__main__":
     else:
         print(content)
     
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
