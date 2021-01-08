@@ -154,12 +154,17 @@ class MyGUI:
         self.ButtonC3 = Button(self.frmC, text='清空信息', width = 15, command=lambda :delText(gui.TexB))
         self.ButtonC4 = Button(self.frmC, text='重新载入当前POC', width = 15, command=ReLoad)
         self.ButtonC5 = Button(self.frmC, text='当前环境变量', width = 15, command=ShowPython)
+        self.LabCA    = Label(self.frmC, text='当前运行状态')
+        self.TexCA    = Text(self.frmC, font=("consolas",10), width=2, height=1)
+        self.TexCA.configure(state="disabled")
         #表格布局
         self.ButtonC1.grid(row=0, column=0,padx=2, pady=2)
         self.ButtonC2.grid(row=0, column=1,padx=2, pady=2)
         self.ButtonC3.grid(row=0, column=2,padx=2, pady=2)
         self.ButtonC4.grid(row=0, column=3,padx=2, pady=2)
         self.ButtonC5.grid(row=0, column=4,padx=2, pady=2)
+        self.LabCA.grid(row=0, column=5,padx=2, pady=2)
+        self.TexCA.grid(row=0, column=6,padx=2, pady=2)
     #创造第四象限
     def CreateFourth(self):
         global Checkbutton_text,vuln
@@ -906,6 +911,27 @@ class Verification(object):
         with open(OUTPUT, 'a') as output_file:
             output_file.write("%s\n" % item)
 
+
+class Job(threading.Thread):
+    def __init__(self, *args, **kwargs):
+        super(Job, self).__init__(*args, **kwargs)
+        self.__flag = threading.Event()   # 用于暂停线程的标识
+        self.__flag.set()    # 设置为True
+        self.__running = threading.Event()   # 用于停止线程的标识
+        self.__running.set()   # 将running设置为True
+    def run(self):
+        while self.__running.isSet():
+            self.__flag.wait()   # 为True时立即返回, 为False时阻塞直到内部的标识位为True后返回
+            wait_running()
+    def pause(self):
+        self.__flag.clear()   # 设置为False, 让线程阻塞
+    def resume(self):
+        self.__flag.set()  # 设置为True, 让线程停止阻塞
+    def stop(self):
+        self.__flag.set()    # 将线程从暂停状态恢复, 如何已经暂停的话
+        self.__running.clear()    # 设置为False
+
+
 ###全局函数定义###
 #调用checkbutton按钮
 def callCheckbutton(x,i):
@@ -1003,6 +1029,17 @@ def bind_combobox(*args):
     except Exception as e:
         print('[*]异常对象的内容是:%s'%type(e))
 
+def wait_running():
+    global wait_index
+    
+    list = ["\\", "|", "/", "—"]
+    index = wait_index % 4
+    gui.TexCA.configure(state="normal")
+    gui.TexCA.insert(INSERT,list[index])
+    time.sleep(0.25)
+    gui.TexCA.delete('1.0','end')
+    gui.TexCA.configure(state="disabled")
+    wait_index = wait_index + 1
 
 def LoadCMD():
     global scriptPath
@@ -1102,8 +1139,11 @@ def BugTest(**kwargs):
     elif kwargs['url']:
         start = time.time()
         try:
+            wait_running_job = Job()
+            wait_running_job.start()
             print('⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝%s⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝'%sc_name)
             vuln.check(**kwargs)
+            wait_running_job.stop()
         except Exception as e:
             print('出现错误: %s'%type(e))
         end = time.time()
@@ -1256,6 +1296,7 @@ threadList = []#线程列表
 var = []#变量列表
 row = 1#动态创建button控件
 path = ''#python第三方库路径
+wait_index = 0#wait_running
 Checkbutton_text = ''
 now_text = ''
 vuln = None#初始化调用flag
