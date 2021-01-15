@@ -2,13 +2,14 @@
 from tkinter import *
 from tkinter import ttk,messagebox,scrolledtext
 import os,sys,time,socket,socks,datetime
-import tkinter.filedialog,importlib,glob
-import threading,ast,math
+import tkinter.filedialog,importlib,glob,requests
+import threading,ast,math,json
 import urllib3
 import inspect
 import ctypes
 import string
 import prettytable as pt
+from requests_toolbelt.utils import dump
 from tkinter.filedialog import askopenfilename
 from keyword import kwlist
 from exp10it import seconds2hms
@@ -43,10 +44,12 @@ class MyGUI:
 
     #创造幕布
     def CreateFrm(self):
-        self.frmTOP = Frame(self.root, width=960 , height=25, bg='white')
+        self.frmTOP = Frame(self.root, width=960 , height=25, bg='whitesmoke')
         self.frmPOC = Frame(self.root, width=960 , height=600, bg='white')
-
         self.frmEXP = Frame(self.root, width=960 , height=610, bg='white')
+        self.frmCheck = Frame(self.root, width=960 , height=610, bg='white')
+
+
         self.frmTOP.grid(row=0, column=0, padx=2, pady=2)
         self.frmPOC.grid(row=1, column=0, padx=2, pady=2)
         #self.frmMain.destroy()
@@ -54,12 +57,15 @@ class MyGUI:
         #创建按钮
         self.frmTOPButton1 = Button(self.frmTOP, text='漏洞扫描', width = 10, command=POC)
         self.frmTOPButton2 = Button(self.frmTOP, text='漏洞利用', width = 10, command=EXP)
-        self.frmTOPButton1.grid(row=0,column=0)
-        self.frmTOPButton2.grid(row=0,column=2)
+        self.frmTOPButton3 = Button(self.frmTOP, text='漏洞测试', width = 10, command=Check)
+        self.frmTOPButton1.grid(row=0,column=0,padx=1, pady=1)
+        self.frmTOPButton2.grid(row=0,column=2,padx=1, pady=1)
+        self.frmTOPButton3.grid(row=0,column=3,padx=1, pady=1)
         
         self.frmTOP.grid_propagate(0)
         self.frmPOC.grid_propagate(0)
         self.frmEXP.grid_propagate(0)
+        self.frmCheck.grid_propagate(0)
 
 
         #定义frame
@@ -156,6 +162,9 @@ class MyGUI:
         self.ButtonC5 = Button(self.frmC, text='当前环境变量', width = 15, command=ShowPython)
         self.LabCA    = Label(self.frmC, text='当前运行状态')
         self.TexCA    = Text(self.frmC, font=("consolas",10), width=2, height=1)
+
+        #self.TexCA.tag_add("here", "1.0","end")
+        #self.TexCA.tag_config("here", background="blue")
         self.TexCA.configure(state="disabled")
         #表格布局
         self.ButtonC1.grid(row=0, column=0,padx=2, pady=2)
@@ -636,10 +645,10 @@ class MyEXP:
 
         ###基本配置
         self.label_1 = Label(self.frame_1, text="目标地址")
-        self.EntA_1 = Entry(self.frame_1, width='36',highlightcolor='red', highlightthickness=1,textvariable=EntA_1_V,font=("consolas",10)) #接受输入控件
+        self.EntA_1 = Entry(self.frame_1, width='58',highlightcolor='red', highlightthickness=1,textvariable=EntA_1_V,font=("consolas",10)) #接受输入控件
 
         self.label_2 = Label(self.frame_1, text="Cookie")
-        self.EntA_2 = Entry(self.frame_1, width='36',highlightcolor='red', highlightthickness=1,textvariable=EntA_2_V,font=("consolas",10)) #接受输入控件
+        self.EntA_2 = Entry(self.frame_1, width='58',highlightcolor='red', highlightthickness=1,textvariable=EntA_2_V,font=("consolas",10)) #接受输入控件
 
         self.label_3 = Label(self.frame_1, text="漏洞名称")
         self.comboxlist_3 = ttk.Combobox(self.frame_1,width='34',textvariable=comvalue_1,state='readonly') #接受输入控件
@@ -654,10 +663,10 @@ class MyEXP:
 
         
         self.label_1.grid(row=0,column=0,padx=3, pady=3)
-        self.EntA_1.grid(row=0,column=1,padx=3, pady=3)
+        self.EntA_1.grid(row=0,columnspan=4,padx=3, pady=3)
 
         self.label_2.grid(row=1,column=0,padx=3, pady=3)
-        self.EntA_2.grid(row=1,column=1,padx=3, pady=3)
+        self.EntA_2.grid(row=1,columnspan=4,padx=3, pady=3)
 
         self.label_3.grid(row=2,column=0,padx=3, pady=3,sticky=W)
         self.comboxlist_3.grid(row=2,column=1,padx=3, pady=3,sticky=W)
@@ -746,6 +755,239 @@ class MyEXP:
         self.CreateFirst()
         self.CreateSecond()
         self.CreateThird()
+
+
+class Mycheck:
+    def __init__(self,root,frmCheck):
+        self.frmCheck = frmCheck
+        self.root = root
+        self.columns = ("字段", "值")
+        self.Type = ['User-Agent','Connection','Accept-Encoding','Accept']
+        self.Value = ['Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0','close','gzip, deflate','*/*']
+
+    def CreateFrm(self):
+        self.frmTOP = Frame(self.frmCheck, width=960, height=25,bg='whitesmoke')#
+
+        self.frmleft_1 = Frame(self.frmCheck, width=480, height=55,bg='white')#
+        self.frmleft_2 = Frame(self.frmCheck, width=480, height=250,bg='white')#
+        self.frmleft_3 = Frame(self.frmCheck, width=480, height=255,bg='white')#
+
+        self.frmright = Frame(self.frmCheck, width=480, height=565,bg='white')#
+
+        self.frmTOP.grid(row=0, columnspan=2, padx=1, pady=1)
+        self.frmleft_1.grid(row=1, column=0, padx=1, pady=1, sticky="w")
+        self.frmleft_2.grid(row=2, column=0, padx=1, pady=1, sticky="w")
+        self.frmleft_3.grid(row=3, column=0, padx=1, pady=1, sticky="w")
+        self.frmright.grid(row=1, rowspan=3, column=1, padx=1, pady=1, sticky="e")
+
+        self.frmTOP.grid_propagate(0)
+        self.frmleft_1.grid_propagate(0)
+        self.frmleft_2.grid_propagate(0)
+        self.frmleft_3.grid_propagate(0)
+        self.frmright.grid_propagate(0)
+
+    def CreateFirst(self):
+        self.checkbutton_1 = Button(self.frmTOP, text='发送', width=10, command=lambda :self.thread_it(self._request))
+        self.checkbutton_2 = Button(self.frmTOP, text='生成EXP', width=10)
+
+        self.checkbutton_1.grid(row=0, column=0, padx=1, pady=1)
+        self.checkbutton_2.grid(row=0, column=1, padx=1, pady=1)
+
+    def CreateSecond(self):
+        self.label_1 = Label(self.frmleft_1, text="请求方法")
+        self.comboxlist_1 = ttk.Combobox(self.frmleft_1,width='15',textvariable=comvalue_3,state='readonly')#请求方法类型
+        self.comboxlist_1["values"] = tuple(Get_type)
+        self.comboxlist_1.bind("<<ComboboxSelected>>", self.Action_post)
+
+        self.label_2 = Label(self.frmleft_1, text="目标地址")
+        self.EntA_1 = Entry(self.frmleft_1, width='58',highlightcolor='red', highlightthickness=1,textvariable=EntA_7_V,font=("consolas",10))#URL
+
+
+        self.label_1.grid(row=0, column=0, padx=1, pady=1)
+        self.comboxlist_1.grid(row=0, column=1, padx=1, pady=1, sticky='w')
+        self.label_2.grid(row=1, column=0, padx=1, pady=1, sticky='s')
+        self.EntA_1.grid(row=1, column=1, padx=1, pady=1, sticky='s')
+    
+    def CreateThird(self):
+        self.frmleft_2_1 = Frame(self.frmleft_2, width=400, height=250,bg='whitesmoke')#
+        self.frmleft_2_2 = Frame(self.frmleft_2, width=75, height=250,bg='whitesmoke')#
+
+        self.frmleft_2_1.grid(row=0, column=0, padx=1, pady=1)
+        self.frmleft_2_2.grid(row=0, column=1, padx=1, pady=1)
+
+        self.frmleft_2_1.grid_propagate(0)
+        self.frmleft_2_2.grid_propagate(0)
+
+
+        self.treeview_1 = ttk.Treeview(self.frmleft_2_1, height=12, show="headings", columns=self.columns)  # 表格
+
+        self.treeview_1.column("字段", width=100, anchor='w')#表示列,不显示
+        self.treeview_1.column("值", width=300, anchor='w')
+ 
+        self.treeview_1.heading("字段", text="字段")#显示表头
+        self.treeview_1.heading("值", text="值")
+
+        self.treeview_1.bind('<Double-Button-1>', self.set_cell_value) # 双击左键进入编辑
+
+        self.checkbutton_3 = Button(self.frmleft_2_2, text='<-添加', width=9, command=self.newrow)
+        self.checkbutton_4 = Button(self.frmleft_2_2, text='<-删除', width=9, command=self.deltreeview)
+        self.checkbutton_5 = Button(self.frmleft_2_2, text='清空->', width=9, command=self.delText)
+
+        self.treeview_1.grid(row=0, column=0, padx=1, pady=1)
+        self.checkbutton_3.grid(row=0, column=0, padx=1, pady=1, sticky='n')
+        self.checkbutton_4.grid(row=1, column=0, padx=1, pady=1, sticky='n')
+        self.checkbutton_5.grid(row=2, column=0, padx=1, pady=1, sticky='n')
+
+        for i in range(min(len(self.Type),len(self.Value))): # 写入数据
+            self.treeview_1.insert('', i, values=(self.Type[i], self.Value[i]))
+
+    def CreateFourth(self):
+        self.Text_post = Text(self.frmleft_3, font=("consolas",10), width=65, height=17)
+        self.Text_scr = Scrollbar(self.frmleft_3)
+
+        self.Text_post.grid(row=0, column=0, padx=1, pady=1)
+        self.Text_scr.grid(row=0, column=1, sticky=S + W + E + N)
+        self.Text_scr.config(command=self.Text_post.yview)
+        self.Text_post.config(yscrollcommand=self.Text_scr.set)
+
+    def CreateFivth(self):
+        self.Text_response = Text(self.frmright, font=("consolas",10), width=64, height=37)
+        self.Text_response_scr = Scrollbar(self.frmright)
+
+        self.Text_response.configure(state="disabled")
+        self.Text_response.grid(row=0, column=0, padx=1, pady=1)
+        self.Text_response_scr.grid(row=0, column=1, sticky=S + W + E + N)
+        self.Text_response_scr.config(command=self.Text_response.yview)
+        self.Text_response.config(yscrollcommand=self.Text_response_scr.set)
+
+    def Action_post(self,*args):
+        if comvalue_3.get() == 'POST':
+            self.Type.append('Content-Type')
+            self.Value.append('application/x-www-form-urlencoded')
+            self.treeview_1.insert('', len(self.Type)-1, values=(self.Type[len(self.Type)-1], self.Value[len(self.Type)-1]))
+            self.treeview_1.update()
+        else:
+            for index in self.treeview_1.get_children():
+                #a = self.treeview_1.item(index, "values")
+                if self.treeview_1.item(index, "values")[0] == 'Content-Type':
+                    self.treeview_1.delete(index)
+
+    def delText(self):
+        self.Text_response.delete('1.0','end')
+
+    def newrow(self):
+        self.Type.append('字段')
+        self.Value.append('值')
+    
+        self.treeview_1.insert('', len(self.Type)-1, values=(self.Type[len(self.Type)-1], self.Value[len(self.Type)-1]))
+        self.treeview_1.update()
+
+    def deltreeview(self):
+        for self.item in self.treeview_1.selection():
+            self.treeview_1.delete(self.item)
+
+    #双击编辑事件
+    def set_cell_value(self,event):
+        for self.item in self.treeview_1.selection():
+        #item = I001
+            item_text = self.treeview_1.item(self.item, "values")
+	
+        #print(item_text[0:2])  # 输出所选行的值
+        self.column= self.treeview_1.identify_column(event.x)# 列
+        row = self.treeview_1.identify_row(event.y)  # 行
+        cn = int(str(self.column).replace('#',''))
+        rn = int(str(row).replace('I',''))
+        self.entryedit = Text(self.frmleft_2_1, font=("consolas",10))
+        self.entryedit.insert(INSERT, item_text[cn-1])
+        self.entryedit.bind('<FocusOut>',self.saveedit)
+        self.entryedit.place(x=(cn-1)*self.treeview_1.column("字段")["width"],
+                        y=25+(rn-1)*18,width=self.treeview_1.column(self.columns[cn-1])["width"],
+                        height=18)
+        
+    #文本失去焦点事件
+    def saveedit(self,event):
+        self.treeview_1.set(self.item, column=self.column, value=self.entryedit.get(0.0, "end"))
+        self.entryedit.destroy()
+
+    def handle_post(self,data_post):
+        data_dic = {}
+        for i in data_post.split('&'):
+            j = i.split('=')
+            data_dic.update({j[0]:j[1]})
+        return data_dic
+
+    def _request(self):
+        self.headers = {}
+        self.TIMEOUT = 5
+        self.Action = comvalue_3.get()
+        self.url = EntA_7_V.get()
+        self.data_post = self.Text_post.get(1.0, "end").replace('\n','')
+        if self.url:
+            pass
+        else:
+            messagebox.showinfo(title='提示', message='请输入目标地址!')
+            return
+
+        for index in self.treeview_1.get_children():
+            item_text = self.treeview_1.item(index, "values")
+
+            self.headers.update({item_text[0].strip('\n'):item_text[1].strip('\n')})
+        #print(globals())
+        self.Text_response.configure(state="normal")
+        try:
+            if self.Action == 'GET':
+                self.response = requests.get(url=self.url,
+                                    headers=self.headers,
+                                    timeout=self.TIMEOUT,
+                                    verify=False)
+
+            elif self.Action == 'POST':
+                #POST数据处理
+                if self.headers['Content-Type'] == 'application/x-www-form-urlencoded':
+                    self.response = requests.post(url=self.url,
+                                                headers=self.headers,
+                                                data=self.handle_post(self.data_post),
+                                                timeout=self.TIMEOUT,
+                                                verify=False)
+                    
+                else:
+                    self.response = requests.post(url=self.url,
+                                                headers=self.headers,
+                                                data=self.data_post,
+                                                timeout=self.TIMEOUT,
+                                                verify=False)
+            else:
+                messagebox.showinfo(title='提示', message='暂不支持该方法!')
+                return
+            self.rawdata = dump.dump_all(self.response,
+                                        request_prefix=b'',
+                                        response_prefix=b'').decode('utf-8','ignore')
+            self.Text_response.delete('1.0','end')
+            self.Text_response.insert(INSERT, self.rawdata)
+        except requests.exceptions.Timeout as error:
+            messagebox.showinfo(title='提示', message='请求超时!')
+        except requests.exceptions.ConnectionError as error:
+            messagebox.showinfo(title='提示', message='请求错误!')
+        except KeyError as error:
+            messagebox.showinfo(title='提示', message='POST请求需要加上 Content-Type 头部字段!')
+        except Exception as error:
+            messagebox.showinfo(title='提示', message=error)
+        finally:
+            self.Text_response.configure(state="disabled")
+    
+    def thread_it(self,func,**kwargs):
+        self.t = threading.Thread(target=func,kwargs=kwargs)
+        self.t.setDaemon(True)   # 守护--就算主界面关闭，线程也会留守后台运行（不对!）
+        self.t.start()           # 启动
+
+
+    def start(self):
+        self.CreateFrm()
+        self.CreateFirst()
+        self.CreateSecond()
+        self.CreateThird()
+        self.CreateFourth()
+        self.CreateFivth()
 
 class Timed(object):
     def timed(self, de):
@@ -1061,6 +1303,12 @@ def _async_raise(tid, exctype):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
+def Separator(str_):
+    index = 91 - len(str_)
+    left = math.ceil(index/2)
+    right = math.floor(index/2)
+    return '-'*left + str_ + '-'*right
+
 
 #测试按钮功能
 def BugTest(**kwargs):
@@ -1098,7 +1346,7 @@ def BugTest(**kwargs):
     if file_len > 0:
         start = time.time()
         flag = round(640/file_len, 2)#每执行一个任务增长的长度
-        print('⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝%s⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝'%sc_name)
+        print(Separator(sc_name))
         #print(int(kwargs['pool']))
         executor = ThreadPoolExecutor(max_workers = int(kwargs['pool']))
         url_list = []#存储目标列表
@@ -1141,7 +1389,7 @@ def BugTest(**kwargs):
         try:
             wait_running_job = Job()
             wait_running_job.start()
-            print('⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝%s⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝⚝'%sc_name)
+            print(Separator(sc_name))
             vuln.check(**kwargs)
             wait_running_job.stop()
         except Exception as e:
@@ -1171,14 +1419,22 @@ def ReLoad():
         messagebox.showinfo(title='提示', message='重新加载失败')
         return
 
+def Check():
+    gui.frmPOC.grid_remove()
+    gui.frmEXP.grid_remove()
+    gui.frmCheck.grid(row=1, column=0, padx=2, pady=2)
+
+
 def EXP():
     gui.frmPOC.grid_remove()
+    gui.frmCheck.grid_remove()
     gui.frmEXP.grid(row=1, column=0, padx=2, pady=2)
     sys.stdout = TextRedirector(exp.TexBOT_1_2, "stdout", index="2")
     sys.stderr = TextRedirector(exp.TexBOT_1_2, "stderr", index="2")
 
 def POC():
     gui.frmEXP.grid_remove()
+    gui.frmCheck.grid_remove()
     gui.frmPOC.grid()
     sys.stdout = TextRedirector(gui.TexB, "stdout")
     sys.stderr = TextRedirector(gui.TexB, "stderr")
@@ -1305,6 +1561,7 @@ verify = Verification()#标准输出
 Colored_ = Colored()#颜色对象
 now = Timed()#时间对象
 github_now = None
+Get_type = ['GET','POST']#请求类型
 ###环境变量###
 
 ###添加python环境的第三方库###
@@ -1326,16 +1583,22 @@ kws = kwlist
 if __name__ == "__main__":
     gui = MyGUI()
 
+    #全局定义组件宽度
+    s = ttk.Style()
+    s.configure('Treeview', rowheight=18) # repace 40 with whatever you need
+
     ###定义组键初值###
     EntA_1_V = StringVar()#目标地址输入框
     EntA_2_V = StringVar()#Cookie输入框
     EntA_4_V = StringVar()#IP地址输入框
     EntA_5_V = StringVar()#Port输入框
     EntA_6_V = StringVar()#线程输入框
+    EntA_7_V = StringVar()#第三模块URL输入框
     EntABOT_1_V = StringVar()#CMD命令输入框
     comvalue = StringVar()#代理类型输入框
     comvalue_1 = StringVar()#漏洞名称输入框
     comvalue_2 = StringVar()#调用方法
+    comvalue_3 = StringVar()#请求方法类型
     CheckVar1 = IntVar()#控制代理开关1
     CheckVar2 = IntVar()#控制代理开关0
     ###设置初值###
@@ -1343,6 +1606,8 @@ if __name__ == "__main__":
     comvalue.set("SOCKS5")
     comvalue_1.set("请选择漏洞名称")
     comvalue_2.set("ALL")
+    comvalue_3.set("GET")
+
     addr = StringVar(value='127.0.0.1')#代理IP
     port = StringVar(value='10086')#代理端口
     variable_dict = {"CheckVar1":CheckVar1, "CheckVar2":CheckVar2, "PROXY_TYPE":comvalue, "addr":addr, "port":port}#这里我们声明的变量全部应该写在主窗口生成后
@@ -1351,7 +1616,9 @@ if __name__ == "__main__":
     
     gui.start()
     exp = MyEXP(gui.root,gui.frmEXP)
+    mycheck = Mycheck(gui.root, gui.frmCheck)
     exp.start()
+    mycheck.start()
     str1 = '''[*]请输入正确的网址,比如 [http://www.baidu.com]
 [*]请注意有些需要使用域名, 有些需要使用IP!
 [*]漏洞扫描模块是检测漏洞的, 命令执行需要在漏洞利用模块使用!
