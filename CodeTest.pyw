@@ -873,7 +873,9 @@ class Mycheck:
                     self.treeview_1.delete(index)
 
     def delText(self):
+        self.Text_response.configure(state="normal")
         self.Text_response.delete('1.0','end')
+        self.Text_response.configure(state="disabled")
 
     def newrow(self):
         self.Type.append('字段')
@@ -885,7 +887,8 @@ class Mycheck:
     def deltreeview(self):
         for self.item in self.treeview_1.selection():
             self.treeview_1.delete(self.item)
-
+            self.Type.pop(int(self.item.replace('I00',''))-1)
+            self.Value.pop(int(self.item.replace('I00',''))-1)
     #双击编辑事件
     def set_cell_value(self,event):
         for self.item in self.treeview_1.selection():
@@ -906,8 +909,17 @@ class Mycheck:
         
     #文本失去焦点事件
     def saveedit(self,event):
-        self.treeview_1.set(self.item, column=self.column, value=self.entryedit.get(0.0, "end"))
-        self.entryedit.destroy()
+        try:
+            self.treeview_1.set(self.item, column=self.column, value=self.entryedit.get(0.0, "end"))
+            if self.column.replace('#','') == '1':
+                self.Type[int(self.item.replace('I00',''))-1] = self.entryedit.get(0.0, "end").replace('\n','')
+            elif self.column.replace('#','') == '2':
+                self.Value[int(self.item.replace('I00',''))-1] = self.entryedit.get(0.0, "end").replace('\n','')
+
+        except Exception as e:
+            pass
+        finally:
+            self.entryedit.destroy()
 
     def handle_post(self,data_post):
         data_dic = {}
