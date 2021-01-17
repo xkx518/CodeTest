@@ -839,7 +839,11 @@ class Mycheck:
         self.checkbutton_5.grid(row=2, column=0, padx=1, pady=1, sticky='n')
 
         for i in range(min(len(self.Type),len(self.Value))): # 写入数据
-            self.treeview_1.insert('', i, values=(self.Type[i], self.Value[i]))
+            self.treeview_1.insert('', 
+                                i, 
+                                iid='I00'+str(i+1),
+                                values=(self.Type[i], 
+                                self.Value[i]))
 
     def CreateFourth(self):
         self.Text_post = Text(self.frmleft_3, font=("consolas",10), width=65, height=17)
@@ -880,26 +884,41 @@ class Mycheck:
     def newrow(self):
         self.Type.append('字段')
         self.Value.append('值')
-    
-        self.treeview_1.insert('', len(self.Type)-1, values=(self.Type[len(self.Type)-1], self.Value[len(self.Type)-1]))
-        self.treeview_1.update()
+        #解决BUG, insert函数如果不指定iid, 则会自动生成item标识, 此操作不会因del而回转生成
+        try:
+            self.treeview_1.insert('', 'end',
+                            iid='I00'+str(len(self.Type)),
+                            values=(self.Type[len(self.Type)-1], 
+                            self.Value[len(self.Type)-1]))
+            self.treeview_1.update()
+        except Exception as e:
+            self.Type.pop()
+            self.Value.pop()
 
     def deltreeview(self):
+        #index_to_delete = []
         for self.item in self.treeview_1.selection():
             self.treeview_1.delete(self.item)
-            self.Type.pop(int(self.item.replace('I00',''))-1)
-            self.Value.pop(int(self.item.replace('I00',''))-1)
+            self.Type[int(self.item.replace('I00',''))-1] = None
+            self.Value[int(self.item.replace('I00',''))-1] = None
+            #index_to_delete.append(int(self.item.replace('I00',''))-1)
+        
+        #self.Type = [self.Type[i] for i in range(0, len(self.Type), 1) if i not in index_to_delete]
+        #self.Value = [self.Value[i] for i in range(0, len(self.Value), 1) if i not in index_to_delete]
+            
     #双击编辑事件
     def set_cell_value(self,event):
         for self.item in self.treeview_1.selection():
         #item = I001
             item_text = self.treeview_1.item(self.item, "values")
+            #a = self.treeview_1.item(self.item)
 	
         #print(item_text[0:2])  # 输出所选行的值
         self.column= self.treeview_1.identify_column(event.x)# 列
-        row = self.treeview_1.identify_row(event.y)  # 行
+        #row = self.treeview_1.identify_row(event.y)  # 行
         cn = int(str(self.column).replace('#',''))
-        rn = int(str(row).replace('I',''))
+        rn = math.floor(math.floor(event.y-25)/18)+1
+        #rn = int(str(row).replace('I',''))
         self.entryedit = Text(self.frmleft_2_1, font=("consolas",10))
         self.entryedit.insert(INSERT, item_text[cn-1])
         self.entryedit.bind('<FocusOut>',self.saveedit)
@@ -911,6 +930,7 @@ class Mycheck:
     def saveedit(self,event):
         try:
             self.treeview_1.set(self.item, column=self.column, value=self.entryedit.get(0.0, "end"))
+            a = self.treeview_1.set(self.item)
             if self.column.replace('#','') == '1':
                 self.Type[int(self.item.replace('I00',''))-1] = self.entryedit.get(0.0, "end").replace('\n','')
             elif self.column.replace('#','') == '2':
@@ -951,7 +971,8 @@ class Mycheck:
                 self.response = requests.get(url=self.url,
                                     headers=self.headers,
                                     timeout=self.TIMEOUT,
-                                    verify=False)
+                                    verify=False,
+                                    allow_redirects=False)
 
             elif self.Action == 'POST':
                 #POST数据处理
@@ -960,14 +981,16 @@ class Mycheck:
                                                 headers=self.headers,
                                                 data=self.handle_post(self.data_post),
                                                 timeout=self.TIMEOUT,
-                                                verify=False)
+                                                verify=False,
+                                                allow_redirects=False)
                     
                 else:
                     self.response = requests.post(url=self.url,
                                                 headers=self.headers,
                                                 data=self.data_post,
                                                 timeout=self.TIMEOUT,
-                                                verify=False)
+                                                verify=False,
+                                                allow_redirects=False)
             else:
                 messagebox.showinfo(title='提示', message='暂不支持该方法!')
                 return
