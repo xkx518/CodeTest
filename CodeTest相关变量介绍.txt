@@ -1,0 +1,64 @@
+class MyGUI#主界面类
+class TextRedirector()#重定向输出类
+class TopProxy()#顶层代理界面类
+class Loadfile()#加载多目标类
+class Topfile()#编辑代码界面类
+class MyEXP#漏洞利用界面类
+class Mycheck#漏洞测试界面类
+class Timed()#时间类
+class Colored()#颜色类
+class Verification()#漏洞利用界面验证类
+class Job()#运行状态线程类
+
+callCheckbutton()#调用checkbutton按钮
+Create()#创建POC脚本选择Checkbutton
+CreateThread()#填充线程列表,创建多个存储POC脚本的界面, 默认为1, 2, 3, 4
+LoadPoc()#加载POC文件夹下的脚本
+LoadEXP()#加载EXP文件夹下的脚本
+bind_combobox()#漏洞利用界面根据漏洞类型显示对应的CVE
+wait_running()#当前运行状态
+LoadCMD()#打开脚本目录
+_async_raise()#终止子线程
+Separator()#返回分隔符号函数
+ShowPython#显示python搜索环境路径
+ReLoad()#重载脚本函数
+Check()#显示漏洞测试界面
+EXP()#显示漏洞利用界面
+POC()#显示漏洞扫描界面
+Area_POC()#创建多个存储POC脚本的界面, 默认为1, 2, 3, 4
+delText()#删除text组件的内容
+GetShell()#漏洞利用界面getshell函数
+exeCMD()#漏洞利用界面执行命令函数
+note()#预留功能函数
+callbackClose()#退出时执行的函数
+color()#颜色输出函数
+
+#EXP运行环境配置
+VULN = True#决策是漏洞验证还是命令执行
+DEBUG = None#开启调试模式，输出返回信息
+DELAY = 0#延迟输出
+TIMEOUT = 10#请求超时
+OUTPUT = None#结果输出到文本中
+CMD = "echo VuLnEcHoPoCSuCCeSS"#默认命令，用于漏洞存在测试
+RUNALLPOC = False#运行所有脚本
+
+VUL_EXP#漏洞名称和具体的CVE对应
+headers#默认头部字段
+PROXY_TYPE = {"SOCKS4":1,"SOCKS5":2,"HTTP":3}#代理设置全局变量
+threadLock = threading.Lock()#线程锁
+threadList = []#线程列表
+scripts = []#lib下的脚本列表
+exp_scripts = []#EXP下的脚本列表
+exp_scripts_cve = ['ALL']#EXP下的脚本的CVE编号
+var = []#用于生成checkbutton处
+row = 1#用于生成checkbutton处
+wait_index = 0#用于wait_running函数
+Checkbutton_text = ''#选中的checkbutton,代表执行的POC脚本名称
+now_text = ''#存储多目标文本
+vuln = None#当前正在执行的POC脚本对象
+vuln_1 = None#当前正在执行的EXP脚本对象
+verify = Verification()#漏洞验证对象
+Colored_ = Colored()#颜色输出对象
+now = Timed()#时间输出对象
+github_now = None
+Get_type = ['GET','POST']#漏洞验证请求类型
