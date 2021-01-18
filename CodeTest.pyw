@@ -155,7 +155,7 @@ class MyGUI:
     #创造第三象限
     def CreateThird(self):
         global now_text,EntA_6_V
-        self.ButtonC1 = Button(self.frmC, text='验 证', width = 10, command=lambda :self.thread_it(BugTest,**{"url":self.EntA.get(),"port":self.EntA2.get(),"file_list":now_text,'pool':EntA_6_V.get()}))
+        self.ButtonC1 = Button(self.frmC, text='验 证', width = 10, command=lambda :self.thread_it(self.BugTest,**{"url":self.EntA.get(),"port":self.EntA2.get(),"file_list":now_text,'pool':EntA_6_V.get()}))
         self.ButtonC2 = Button(self.frmC, text='终 止', width = 10, command=lambda :self.stop_thread())
         self.ButtonC3 = Button(self.frmC, text='清空信息', width = 15, command=lambda :delText(gui.TexB))
         self.ButtonC4 = Button(self.frmC, text='重新载入当前POC', width = 15, command=ReLoad)
@@ -209,9 +209,105 @@ class MyGUI:
     def stop_thread(self):
         try:
             _async_raise(self.t.ident, SystemExit)
+            self.wait_running_job.stop()
             print("[*]已停止运行")
         except Exception as e:
             tkinter.messagebox.showinfo('提示','没有正在运行的进程!')
+
+    def BugTest(self,**kwargs):
+#kwargs = {url,port,file_list,pool}
+#url:str
+#port:str
+#file_list:str
+#pool:str
+        global vuln
+        if vuln == None:
+            messagebox.showinfo(title='提示', message='还未选择模块')
+            return
+        try:
+            if 1 <= int(kwargs['pool']) <= 10:
+                pass
+            else:
+                messagebox.showinfo(title='提示', message='线程数范围(1~10)')
+                return
+        except Exception as e:
+            if type(e) == ValueError:
+                messagebox.showinfo(title='提示', message='只能输入整数')
+                return
+
+        sc_name = vuln.__name__.replace('POC.','')
+        #进度条初始化
+        gui.p1["value"] = 0
+        gui.root.update()
+    #all_task = []
+        file_list = kwargs['file_list'].split("\n")#获取分隔字符串列表
+        file_list = [i for i in file_list if i!='']#去空处理
+    #print(len(file_list))
+    #print(kwargs)
+        file_len = len(file_list)
+    #进入批量测试功能
+        if file_len > 0:
+            start = time.time()
+            flag = round(640/file_len, 2)#每执行一个任务增长的长度
+            print(Separator(sc_name))
+        #print(int(kwargs['pool']))
+            executor = ThreadPoolExecutor(max_workers = int(kwargs['pool']))
+            url_list = []#存储目标列表
+            result_list = []#存储结果列表
+
+            for url in file_list:
+                args = {'url':url}
+                url_list.append(args)
+            try:
+                for data in executor.map(lambda kwargs: vuln.check(**kwargs),url_list):
+                    if type(data) == list:#如果结果是列表,去重一次
+                        data = list(set(data))
+                    result_list.append(data)#汇聚结果
+                    threadLock.acquire()
+                    gui.p1["value"] = gui.p1["value"]+flag#进度条
+                #print(gui.p1["value"])
+                    gui.root.update()
+                    threadLock.release()
+            except Exception as e:
+                print('执行脚本出现错误: %s ,建议在脚本加上异常处理!'%type(e))
+                gui.p1["value"] = 640
+                gui.root.update()
+        
+        #print(result_list)
+            index_list = [i+1 for i in range(len(url_list))]
+            print_result = zip(index_list, file_list, result_list)#合并列表
+            tb = pt.PrettyTable()
+            tb.field_names = ["Index", "URL", "Result"]
+        #tb.align['Index'] = 'l'
+            tb.align['URL'] = 'l'
+            tb.align['Result'] = 'l'
+            for i in print_result:
+                tb.add_row(i)
+            print(tb)#输出结果
+            end = time.time()
+            print('[*]共花费时间：{} 秒'.format(seconds2hms(end - start)))
+    #进入单模块测试功能
+        elif kwargs['url']:
+            start = time.time()
+            try:
+                self.wait_running_job = Job()#运行状态对象
+                self.wait_running_job.start()
+                print(Separator(sc_name))
+                vuln.check(**kwargs)
+                self.wait_running_job.stop()
+            except Exception as e:
+                print('出现错误: %s'%type(e))
+            end = time.time()
+            print('[*]共花费时间：{} 秒'.format(seconds2hms(end - start)))
+    #没有输入测试目标
+        else:
+            color('[*]请输入目标URL!','red')
+            color('[*]请输入目标URL!','yellow')
+            color('[*]请输入目标URL!','blue')
+            color('[*]请输入目标URL!','green')
+            color('[*]请输入目标URL!','orange')
+            color('[*]请输入目标URL!','pink')
+            color('[*]请输入目标URL!','cyan')
 
     #开始循环
     def start(self):
@@ -1422,7 +1518,6 @@ def BugTest(**kwargs):
     elif kwargs['url']:
         start = time.time()
         try:
-            wait_running_job = Job()
             wait_running_job.start()
             print(Separator(sc_name))
             vuln.check(**kwargs)
