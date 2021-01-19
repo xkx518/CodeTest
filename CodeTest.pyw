@@ -1,6 +1,12 @@
 # -*- coding:UTF-8 -*-
 from tkinter import *
 from tkinter import ttk,messagebox,scrolledtext
+from requests_toolbelt.utils import dump
+from tkinter.filedialog import askopenfilename
+from keyword import kwlist
+from exp10it import seconds2hms
+from colorama import init, Fore, Back, Style
+from concurrent.futures import ThreadPoolExecutor,wait,as_completed,ALL_COMPLETED
 import os,sys,time,socket,socks,datetime
 import tkinter.filedialog,importlib,glob,requests
 import threading,ast,math,json
@@ -9,20 +15,17 @@ import inspect
 import ctypes
 import string
 import prettytable as pt
-from requests_toolbelt.utils import dump
-from tkinter.filedialog import askopenfilename
-from keyword import kwlist
-from exp10it import seconds2hms
-from colorama import init, Fore, Back, Style
-from concurrent.futures import ThreadPoolExecutor,wait,as_completed,ALL_COMPLETED
+
+#去除错误警告
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+#主界面类
 class MyGUI:
     def __init__(self):#初始化窗体对象
         self.root = Tk()
         self.root.iconbitmap('python.ico')
         self.title = self.root.title('POC检测')#设置title
-        self.size = self.root.geometry('960x650+400+50')#设置窗体大小，850x550是窗体大小，400+50是初始位置
+        self.size = self.root.geometry('960x650+400+50')#设置窗体大小，960x650是窗体大小，400+50是初始位置
         self.exchange = self.root.resizable(width=False, height=False)#不允许扩大
         self.root.columnconfigure(0, weight=1)
         #对象属性参数字典
@@ -322,57 +325,6 @@ class MyGUI:
         #exp.start()
         ###EXP界面组件创建
 
-#输出重定向
-class TextRedirector(object):
-    def __init__(self, widget, tag="stdout", index="1"):
-        self.widget = widget
-        self.tag = tag
-        self.index = index
-        #颜色定义
-        self.widget.tag_config("red", foreground="red")
-        self.widget.tag_config("white", foreground="white")
-        self.widget.tag_config("green", foreground="green")
-        self.widget.tag_config("black", foreground="black")
-        self.widget.tag_config("yellow", foreground="yellow")
-        self.widget.tag_config("blue", foreground="blue")
-        self.widget.tag_config("orange", foreground="orange")
-        self.widget.tag_config("pink", foreground="pink")
-        self.widget.tag_config("cyan", foreground="cyan")
-        self.widget.tag_config("magenta", foreground="magenta")
-        self.widget.tag_config("fuchsia", foreground="fuchsia")
-
-    def write(self, str):
-        if self.index == "2":###命令执行背景是黑色，字体是绿色。
-            self.tag = 'white'
-            self.widget.configure(state="normal")
-            self.widget.insert(END, str, (self.tag,))
-            self.widget.configure(state="disabled")
-            self.widget.see(END)
-        else:
-            self.tag = 'black'
-            self.widget.configure(state="normal")
-            self.widget.insert(END, str, (self.tag,))
-            self.widget.configure(state="disabled")
-            self.widget.see(END)
-
-    def Colored(self, str, color='black', end='\n'):
-        if end == '':
-            str = str.strip('\n')
-        self.tag = color
-        self.widget.configure(state="normal")
-        self.widget.insert(END, str, (self.tag,))
-        self.widget.configure(state="disabled")
-        self.widget.see(END)
-
-    def flush(self):
-        self.widget.update()
-
-    def waitinh(self):
-        self.widget.configure(state="normal")
-        self.widget.insert(END, str, (self.tag,))
-        self.widget.configure(state="disabled")
-        self.widget.see(END)
-
 class TopProxy():
     def __init__(self,root):
         global variable_dict,temp
@@ -456,9 +408,7 @@ class TopProxy():
             #print(variable_dict["CheckVar1"].get(),variable_dict["CheckVar2"].get())
             print('[*]禁用代理')
 
-
-
-
+#加载多目标类
 class Loadfile():
     global now_text
     def __init__(self,root):
@@ -527,7 +477,7 @@ class Loadfile():
             index = index+1
         now_text = self.TexA.get('0.0','end')
 
-
+#编辑代码界面类
 class Topfile():
     def __init__(self,root,file_name,Logo,vuln_select):
         if Logo == '2':
@@ -576,7 +526,6 @@ class Topfile():
                 array = f.readlines()
                 for i in array: #遍历array中的每个元素
                     self.TexA.insert(INSERT, i)
-                #self.render()#此处是用来渲染文件颜色的，但是有BUG，暂时不用
         except FileNotFoundError:
             print('[-]还未选择模块,无法编辑')
             return
@@ -629,75 +578,8 @@ class Topfile():
             num = min(4,num)
             if num > 1 and num != 4:
                 self.TexA.delete(f'{current_line_num}.{current_col_num-num}',f'{current_line_num}.{current_col_num}')
-    def render(self):
-        lines = self.TexA.get('0.0',tkinter.END).rstrip('\n').splitlines(keepends=True)
-        #删除原来的内容
-        self.TexA.delete('0.0',tkinter.END)
-        #再把原来的内容放回去，给不同子串加不同标记
-        for line in lines:
-            #flag1表示当前是否处于单词中
-            #flag2表示当前是否处于双引号的包围范围之内
-            #flag3表示当前是否处于单引号的包围范围之内
-            flag1, flag2, flag3 = False, False, False
-            for index, ch in enumerate(line):
-                if ch == "'" and not flag2:
-                    #左右引号切换
-                    flag3 = not flag3
-                    self.TexA.insert(tkinter.INSERT, ch, 'string')
-                elif ch == '"' and not flag3:
-                    flag2 = not flag2
-                    self.TexA.insert(tkinter.INSERT, ch, 'string')
-                #引号之内，直接绿色显示
-                elif flag2 or flag3:
-                    self.TexA.insert(tkinter.INSERT, ch, 'string')
-                #不是引号，也不再引号之内
-                else:
-                    #当前字符不是字母
-                    if ch not in string.ascii_letters:
-                        #但是前一个字符是字母，说明一个单词结束
-                        if flag1:
-                            flag1 = False
-                            #获取该位置前面的最后一个单词
-                            word = line[start:index]
-                            #内置函数，加标记
-                            if word in bifs:
-                                self.TexA.insert(tkinter.INSERT, word, 'bif')
-                            #关键字，加标记
-                            elif word in kws:
-                                self.TexA.insert(tkinter.INSERT, word, 'kw')
-                            #普通字符串，不加标记
-                            else:
-                                self.TexA.insert(tkinter.INSERT, word)
-                        if ch == '#':
-                            self.TexA.insert(tkinter.INSERT, line[index:], 'comment')
-                            break
-                        else:
-                            self.TexA.insert(tkinter.INSERT, ch)
-                    else:
-                        #一个新单词的开始
-                        if not flag1:
-                            flag1 = True
-                            start = index
-            #暂时有BUG，当引号前面有字符时，会出错
-            #考虑该行最后一个字符是字母的情况
-            #正在输入的当前行最后一个字母大部分情况下是字母
-            '''
-            if flag1:
-                flag1 = False
-                word = line[start:]
-                if word in bifs:
-                    self.TexA.insert(tkinter.INSERT, word, 'bif')
-                elif word in kws:
-                    self.TexA.insert(tkinter.INSERT, word, 'kw')
-                else:
-                    self.TexA.insert(tkinter.INSERT, word)
-            '''
-    #原来的内容重新着色以后，光标位置会在文本框的最后
-    #这一行用来把光标位置移动到指定位置，也就是正在修改的位置
-    #workArea.see(END)
-    #workArea.mark_set('insert', f'{current_line_num}.{current_col_num}')
 
-
+#漏洞利用界面类
 class MyEXP:
     def __init__(self,root,frmEXP):
         self.frmEXP = frmEXP
@@ -852,7 +734,7 @@ class MyEXP:
         self.CreateSecond()
         self.CreateThird()
 
-
+#漏洞测试界面类
 class Mycheck:
     def __init__(self,root,frmCheck):
         self.frmCheck = frmCheck
@@ -884,7 +766,7 @@ class Mycheck:
 
     def CreateFirst(self):
         self.checkbutton_1 = Button(self.frmTOP, text='发送', width=10, command=lambda :self.thread_it(self._request))
-        self.checkbutton_2 = Button(self.frmTOP, text='生成EXP', width=10)
+        self.checkbutton_2 = Button(self.frmTOP, text='生成EXP', width=10, command=lambda :CreateExp(gui.root))
 
         self.checkbutton_1.grid(row=0, column=0, padx=1, pady=1)
         self.checkbutton_2.grid(row=0, column=1, padx=1, pady=1)
@@ -1062,6 +944,7 @@ class Mycheck:
             self.headers.update({item_text[0].strip('\n'):item_text[1].strip('\n')})
         #print(globals())
         self.Text_response.configure(state="normal")
+        self.Text_response.delete('1.0','end')
         try:
             if self.Action == 'GET':
                 self.response = requests.get(url=self.url,
@@ -1096,13 +979,13 @@ class Mycheck:
             self.Text_response.delete('1.0','end')
             self.Text_response.insert(INSERT, self.rawdata)
         except requests.exceptions.Timeout as error:
-            messagebox.showinfo(title='提示', message='请求超时!')
+            messagebox.showinfo(title='请求超时', message=error)
         except requests.exceptions.ConnectionError as error:
-            messagebox.showinfo(title='提示', message='请求错误!')
+            messagebox.showinfo(title='请求错误', message=error)
         except KeyError as error:
             messagebox.showinfo(title='提示', message='POST请求需要加上 Content-Type 头部字段!')
         except Exception as error:
-            messagebox.showinfo(title='提示', message=error)
+            messagebox.showinfo(title='错误', message=error)
         finally:
             self.Text_response.configure(state="disabled")
     
@@ -1120,6 +1003,217 @@ class Mycheck:
         self.CreateFourth()
         self.CreateFivth()
 
+#根据模板生成EXP类
+class CreateExp():
+    def __init__(self, root):
+        self.Creat = Toplevel(root)
+        self.Creat.title("EXP生成")
+        self.Creat.geometry('960x605+480+20')
+        self.Creat.resizable(width=False, height=False)#不允许扩大
+        self.columns = ("变量", "操作", "值", "逻辑")
+        self.variable = []
+        self.operation = []
+        self.Value = []
+        self.logic = []
+        #self.menubar = Menu(self.Creat)
+        #self.menubar.add_command(label = "", command=lambda :TopProxy(gui.root))
+        #self.Creat.config(menu = self.menubar)
+
+        #左边
+        self.frm_A = Frame(self.Creat, width=500, height=600, bg="white")
+        #右边
+        self.frm_B = Frame(self.Creat, width=450, height=600, bg="white")
+        self.frm_A.grid(row=0, column=0, padx=2, pady=2)
+        self.frm_B.grid(row=0, column=1, padx=2, pady=2)
+        self.frm_A.grid_propagate(0)
+        self.frm_B.grid_propagate(0)
+
+        #左上
+        self.frm_A_1 = Frame(self.frm_A, width=500, height=300, bg="white")
+        #左下
+        self.frm_A_2 = Frame(self.frm_A, width=500, height=300, bg="white")
+        self.frm_A_1.grid(row=0, column=0, padx=1, pady=1)
+        self.frm_A_2.grid(row=1, column=0, padx=1, pady=1)
+        self.frm_A_1.grid_propagate(0)
+        self.frm_A_2.grid_propagate(0)
+
+        self.Lab_A_1_1 = Label(self.frm_A_1, text='CMS名称')#显示
+        self.Ent_A_1_1 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_8_V) #接受输入控件
+        self.Lab_A_1_1.grid(row=0, column=0,padx=20, pady=10, sticky=W)
+        self.Ent_A_1_1.grid(row=0, column=1,padx=20, pady=10, sticky=W)
+
+        self.Lab_A_1_2 = Label(self.frm_A_1, text='CVE编号')#显示
+        self.Ent_A_1_2 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_9_V) #接受输入控件
+        self.Lab_A_1_2.grid(row=1, column=0,padx=20, pady=10, sticky=W)
+        self.Ent_A_1_2.grid(row=1, column=1,padx=20, pady=10, sticky=W)
+
+        self.Lab_A_1_3 = Label(self.frm_A_1, text='版本信息')#显示
+        self.Ent_A_1_3 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_10_V) #接受输入控件
+        self.Lab_A_1_3.grid(row=2, column=0,padx=20, pady=10, sticky=W)
+        self.Ent_A_1_3.grid(row=2, column=1,padx=20, pady=10, sticky=W)
+
+        self.Lab_A_1_4 = Label(self.frm_A_1, text='info')#显示
+        self.comboxlist_A_1_4 = ttk.Combobox(self.frm_A_1,width=20,textvariable=comvalue_4,state='readonly') #接受输入控件
+        self.comboxlist_A_1_4["values"] = tuple(["[rce]","[deserialization rce]",
+                                            "[upload]",
+                                            "[deserialization upload]",
+                                            "[deserialization]",
+                                            "[file contains]",
+                                            "[xxe]",
+                                            "[sql]",
+                                            "[ssrf]"])
+        self.Lab_A_1_4.grid(row=3, column=0,padx=20, pady=10, sticky=W)
+        self.comboxlist_A_1_4.grid(row=3, column=1,padx=20, pady=10, sticky=W)
+
+        #左下左
+        self.frm_A_2_1 = Frame(self.frm_A_2, width=425, height=300,bg='whitesmoke')
+        #左下右
+        self.frm_A_2_2 = Frame(self.frm_A_2, width=75, height=300,bg='whitesmoke')
+        self.frm_A_2_1.grid(row=0, column=0,sticky=W)
+        self.frm_A_2_2.grid(row=0, column=1,sticky=W)
+        self.frm_A_2_1.grid_propagate(0)
+        self.frm_A_2_2.grid_propagate(0)
+
+        self.treeview_A_2 = ttk.Treeview(self.frm_A_2_1, height=15, show="headings", columns=self.columns)  # 表格
+        self.treeview_A_2.column("变量", width=90, anchor='w')#表示列,不显示
+        self.treeview_A_2.column("操作", width=90, anchor='w')
+        self.treeview_A_2.column("值", width=200, anchor='w')
+        self.treeview_A_2.column("逻辑", width=40, anchor='w')
+        self.treeview_A_2.heading("变量", text="变量")#显示表头
+        self.treeview_A_2.heading("操作", text="操作")#显示表头
+        self.treeview_A_2.heading("值", text="值")#显示表头
+        self.treeview_A_2.heading("逻辑", text="逻辑")#显示表头
+        self.treeview_A_2.bind('<Double-Button-1>', self.set_cell_value) # 双击左键进入编辑
+        self.treeview_A_2.grid(row=0, column=0, padx=1, pady=1)
+        
+        self.button_1 = Button(self.frm_A_2_2, text='<-添加', width=9, command=self.newrow)
+        self.button_2 = Button(self.frm_A_2_2, text='<-删除', width=9, command=self.deltreeview)
+        self.button_1.grid(row=0, column=0, padx=1, pady=1, sticky='n')
+        self.button_2.grid(row=1, column=0, padx=1, pady=1, sticky='n')
+
+        self.frm_B_1 = Frame(self.frm_B, width=450, height=30, bg="whitesmoke")
+        self.frm_B_2 = Frame(self.frm_B, width=450, height=560, bg="whitesmoke")
+        self.frm_B_1.grid(row=0, column=0, padx=1, pady=1)
+        self.frm_B_2.grid(row=1, column=0, padx=1, pady=1)
+        self.frm_B_1.grid_propagate(0)
+        self.frm_B_2.grid_propagate(0)
+
+        self.comboxlist_B = ttk.Combobox(self.frm_B_1,width=20,textvariable=comvalue_5,state='readonly') #接受输入控件
+        self.comboxlist_B['values'] = tuple(['POC','EXP'])
+        self.button_3 = Button(self.frm_B_1, text='保存EXP', width=6, command=self.newrow)
+        self.comboxlist_B.grid(row=0, column=0, padx=1, pady=1, sticky=W)
+        self.button_3.grid(row=0, column=1, padx=1, pady=1, sticky=W)
+
+        self.text_B = Text(self.frm_B_2, font=("consolas",10), width=61, height=37)
+        self.Scr_B = Scrollbar(self.frm_B_2)  #滚动条控件
+        self.text_B.grid(row=0, column=0)
+        self.Scr_B.grid(row=0, column=1, sticky=S + W + E + N)
+        self.Scr_B.config(command=self.text_B.yview)
+        self.text_B.config(yscrollcommand=self.Scr_B.set)
+
+
+    def set_cell_value(self, event):
+        for self.item in self.treeview_A_2.selection():
+        #item = I001
+            item_text = self.treeview_A_2.item(self.item, "values")
+	
+        #print(item_text[0:2])  # 输出所选行的值
+        self.column= self.treeview_A_2.identify_column(event.x)# 列
+        cn = int(str(self.column).replace('#',''))
+        rn = math.floor(math.floor(event.y-25)/18)+1
+
+        if cn == 4:
+            self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
+            self.tempCom['values'] = tuple(['AND','OR'])
+            self.tempCom.current(0)
+            self.tempCom.bind("<<ComboboxSelected>>", self.saveCom)
+
+            self.tempCom.place(x=2*self.treeview_A_2.column("变量")["width"]+self.treeview_A_2.column("值")["width"],
+                            y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
+                            height=18)
+        elif cn == 3:
+            self.entryedit = Text(self.frm_A_2_1, font=("consolas",10))
+            self.entryedit.insert(INSERT, item_text[cn-1])
+            self.entryedit.bind('<FocusOut>',self.saveentry)
+            self.entryedit.place(x=2*self.treeview_A_2.column("变量")["width"],
+                            y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
+                            height=18)
+        elif cn == 2:
+            self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
+            self.tempCom['values'] = tuple(['包含','Not Contains','Regex','==','!=','>','<','>=','<='])
+            self.tempCom.current(0)
+            self.tempCom.bind("<<ComboboxSelected>>", self.saveCom)
+
+            self.tempCom.place(x=self.treeview_A_2.column("变量")["width"],
+                            y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
+                            height=18)
+        elif cn == 1:
+            self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
+            self.tempCom['values'] = tuple(['Code','HTTP头','HTTP正文'])
+            self.tempCom.current(0)
+            self.tempCom.bind("<<ComboboxSelected>>", self.saveCom)
+
+            self.tempCom.place(x=0,
+                            y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
+                            height=18)
+
+    def saveentry(self,event):
+        try:
+            self.treeview_A_2.set(self.item, column=self.column, value=self.entryedit.get(0.0, "end").replace('\n',''))
+            #a = self.tempCom.get()
+            self.Value[int(self.item.replace('I00',''))-1] = self.entryedit.get(0.0, "end").replace('\n','')
+
+        except Exception as error:
+            messagebox.showinfo(title='提示', message=error)
+        finally:
+            self.entryedit.destroy()
+
+    def saveCom(self,event):
+        try:
+            self.treeview_A_2.set(self.item, column=self.column, value=self.tempCom.get())
+            #a = self.tempCom.get()
+            if self.column.replace('#','') == '1':
+                self.variable[int(self.item.replace('I00',''))-1] = self.tempCom.get()
+            elif self.column.replace('#','') == '2':
+                self.operation[int(self.item.replace('I00',''))-1] = self.tempCom.get()
+            elif self.column.replace('#','') == '4':
+                self.logic[int(self.item.replace('I00',''))-1] = self.tempCom.get()
+
+        except Exception as error:
+            messagebox.showinfo(title='提示', message=error)
+        finally:
+            self.tempCom.destroy()
+
+
+    def newrow(self):
+        self.variable.append('')
+        self.operation.append('')
+        self.Value.append('')
+        self.logic.append('')
+        #解决BUG, insert函数如果不指定iid, 则会自动生成item标识, 此操作不会因del而回转
+        try:
+            self.treeview_A_2.insert('', 'end',
+                            iid='I00'+str(len(self.variable)),
+                            values=(self.variable[len(self.variable)-1], 
+                            self.operation[len(self.variable)-1],
+                            self.Value[len(self.variable)-1],
+                            self.logic[len(self.variable)-1]))
+            self.treeview_A_2.update()
+        except Exception as e:
+            self.variable.pop()
+            self.operation.pop()
+            self.Value.pop()
+            self.logic.pop()
+
+    def deltreeview(self):
+        for self.item in self.treeview_A_2.selection():
+            self.treeview_A_2.delete(self.item)
+            self.variable[int(self.item.replace('I00',''))-1] = None
+            self.operation[int(self.item.replace('I00',''))-1] = None
+            self.Value[int(self.item.replace('I00',''))-1] = None
+            self.logic[int(self.item.replace('I00',''))-1] = None
+
+#时间类
 class Timed(object):
     def timed(self, de):
         now = datetime.datetime.now()
@@ -1134,6 +1228,7 @@ class Timed(object):
         time.sleep(de)
         print("["+str(now)[11:19]+"] ",end="")
 
+#颜色类
 class Colored(object):
     # Vuln type
     def rce(self):
@@ -1162,6 +1257,7 @@ class Colored(object):
     #def exp_upload(self):
     #    return now.timed(de=0) + color.yeinfo() + color.yellow(" input \"upload\" upload webshell")
 
+#漏洞利用界面验证类
 class Verification(object):
     def show(self, request, pocname, method, rawdata, info):
         if VULN is not None:
@@ -1284,7 +1380,59 @@ class Verification(object):
         with open(OUTPUT, 'a') as output_file:
             output_file.write("%s\n" % item)
 
+#重定向输出类
+class TextRedirector(object):
+    def __init__(self, widget, tag="stdout", index="1"):
+        self.widget = widget
+        self.tag = tag
+        self.index = index
+        #颜色定义
+        self.widget.tag_config("red", foreground="red")
+        self.widget.tag_config("white", foreground="white")
+        self.widget.tag_config("green", foreground="green")
+        self.widget.tag_config("black", foreground="black")
+        self.widget.tag_config("yellow", foreground="yellow")
+        self.widget.tag_config("blue", foreground="blue")
+        self.widget.tag_config("orange", foreground="orange")
+        self.widget.tag_config("pink", foreground="pink")
+        self.widget.tag_config("cyan", foreground="cyan")
+        self.widget.tag_config("magenta", foreground="magenta")
+        self.widget.tag_config("fuchsia", foreground="fuchsia")
 
+    def write(self, str):
+        if self.index == "2":###命令执行背景是黑色，字体是绿色。
+            self.tag = 'white'
+            self.widget.configure(state="normal")
+            self.widget.insert(END, str, (self.tag,))
+            self.widget.configure(state="disabled")
+            self.widget.see(END)
+        else:
+            self.tag = 'black'
+            self.widget.configure(state="normal")
+            self.widget.insert(END, str, (self.tag,))
+            self.widget.configure(state="disabled")
+            self.widget.see(END)
+
+    def Colored(self, str, color='black', end='\n'):
+        if end == '':
+            str = str.strip('\n')
+        self.tag = color
+        self.widget.configure(state="normal")
+        self.widget.insert(END, str, (self.tag,))
+        self.widget.configure(state="disabled")
+        self.widget.see(END)
+
+    def flush(self):
+        self.widget.update()
+
+    def waitinh(self):
+        self.widget.configure(state="normal")
+        self.widget.insert(END, str, (self.tag,))
+        self.widget.configure(state="disabled")
+        self.widget.see(END)
+
+
+#运行状态线程类
 class Job(threading.Thread):
     def __init__(self, *args, **kwargs):
         super(Job, self).__init__(*args, **kwargs)
@@ -1327,7 +1475,7 @@ def callCheckbutton(x,i):
         vuln = None
         print('[*] %s 模块已取消!'%x)
 
-#创建button
+#创建POC脚本选择Checkbutton
 def Create(frm, x, i):
     global row
     global var
@@ -1337,11 +1485,11 @@ def Create(frm, x, i):
         row = 1
     button = Checkbutton(frm,text=x,command=lambda:callCheckbutton(x,i),variable=var[i])
     button.grid(row=row,sticky=W)
-    print(x+'加载成功!')
+    #print(x+'加载成功!')
     row += 1
     threadLock.release()
 
-#填充线程列表
+#填充线程列表,创建多个存储POC脚本的界面, 默认为1, 2, 3, 4
 def CreateThread():
     temp_list = []
     for i in range(1,len(scripts)+1):
@@ -1357,7 +1505,7 @@ def CreateThread():
         thread.setDaemon(True)
         threadList.append(thread)
 
-#加载POC文件夹下的POC
+#加载POC文件夹下的脚本
 def LoadPoc():
     global scripts
     global var
@@ -1375,7 +1523,7 @@ def LoadPoc():
     except Exception as e:
         tkinter.messagebox.showinfo('提示','请勿重复加载')
 
-#加载EXP文件夹下的EXP
+#加载EXP文件夹下的脚本
 def LoadEXP():
     global exp_scripts,comvalue_1
 
@@ -1385,6 +1533,7 @@ def LoadEXP():
     exp_scripts.remove('__init__')
     #print(tuple(exp_scripts))
 
+#漏洞利用界面根据漏洞类型显示对应的CVE
 def bind_combobox(*args):
     #self.comboxlist_3.get()
     global vuln_1,exp_scripts_cve
@@ -1402,6 +1551,7 @@ def bind_combobox(*args):
     except Exception as e:
         print('[*]异常对象的内容是:%s'%type(e))
 
+#当前运行状态
 def wait_running():
     global wait_index
     
@@ -1414,6 +1564,7 @@ def wait_running():
     gui.TexCA.configure(state="disabled")
     wait_index = wait_index + 1
 
+#打开脚本目录
 def LoadCMD():
     global scriptPath
     start_directory = scriptPath +'/POC'
@@ -1434,112 +1585,18 @@ def _async_raise(tid, exctype):
         ctypes.pythonapi.PyThreadState_SetAsyncExc(tid, None)
         raise SystemError("PyThreadState_SetAsyncExc failed")
 
+#返回分隔符号函数
 def Separator(str_):
     index = 91 - len(str_)
     left = math.ceil(index/2)
     right = math.floor(index/2)
     return '-'*left + str_ + '-'*right
 
-
-#测试按钮功能
-def BugTest(**kwargs):
-#kwargs = {url,port,file_list,pool}
-#url:str
-#port:str
-#file_list:str
-#pool:str
-    global vuln
-    if vuln == None:
-        messagebox.showinfo(title='提示', message='还未选择模块')
-        return
-    try:
-        if 1 <= int(kwargs['pool']) <= 10:
-            pass
-        else:
-            messagebox.showinfo(title='提示', message='线程数范围(1~10)')
-            return
-    except Exception as e:
-        if type(e) == ValueError:
-            messagebox.showinfo(title='提示', message='只能输入整数')
-            return
-
-    sc_name = vuln.__name__.replace('POC.','')
-    #进度条初始化
-    gui.p1["value"] = 0
-    gui.root.update()
-    #all_task = []
-    file_list = kwargs['file_list'].split("\n")#获取分隔字符串列表
-    file_list = [i for i in file_list if i!='']#去空处理
-    #print(len(file_list))
-    #print(kwargs)
-    file_len = len(file_list)
-    #进入批量测试功能
-    if file_len > 0:
-        start = time.time()
-        flag = round(640/file_len, 2)#每执行一个任务增长的长度
-        print(Separator(sc_name))
-        #print(int(kwargs['pool']))
-        executor = ThreadPoolExecutor(max_workers = int(kwargs['pool']))
-        url_list = []#存储目标列表
-        result_list = []#存储结果列表
-
-        for url in file_list:
-            args = {'url':url}
-            url_list.append(args)
-        try:
-            for data in executor.map(lambda kwargs: vuln.check(**kwargs),url_list):
-                if type(data) == list:#如果结果是列表,去重一次
-                    data = list(set(data))
-                result_list.append(data)#汇聚结果
-                threadLock.acquire()
-                gui.p1["value"] = gui.p1["value"]+flag#进度条
-                #print(gui.p1["value"])
-                gui.root.update()
-                threadLock.release()
-        except Exception as e:
-            print('执行脚本出现错误: %s ,建议在脚本加上异常处理!'%type(e))
-            gui.p1["value"] = 640
-            gui.root.update()
-        
-        #print(result_list)
-        index_list = [i+1 for i in range(len(url_list))]
-        print_result = zip(index_list, file_list, result_list)#合并列表
-        tb = pt.PrettyTable()
-        tb.field_names = ["Index", "URL", "Result"]
-        #tb.align['Index'] = 'l'
-        tb.align['URL'] = 'l'
-        tb.align['Result'] = 'l'
-        for i in print_result:
-            tb.add_row(i)
-        print(tb)#输出结果
-        end = time.time()
-        print('[*]共花费时间：{} 秒'.format(seconds2hms(end - start)))
-    #进入单模块测试功能
-    elif kwargs['url']:
-        start = time.time()
-        try:
-            wait_running_job.start()
-            print(Separator(sc_name))
-            vuln.check(**kwargs)
-            wait_running_job.stop()
-        except Exception as e:
-            print('出现错误: %s'%type(e))
-        end = time.time()
-        print('[*]共花费时间：{} 秒'.format(seconds2hms(end - start)))
-    #没有输入测试目标
-    else:
-        color('[*]请输入目标URL!','red')
-        color('[*]请输入目标URL!','yellow')
-        color('[*]请输入目标URL!','blue')
-        color('[*]请输入目标URL!','green')
-        color('[*]请输入目标URL!','orange')
-        color('[*]请输入目标URL!','pink')
-        color('[*]请输入目标URL!','cyan')
-
-
+#显示python搜索环境路径
 def ShowPython():
     print(str(sys.path))
 
+#重载脚本函数
 def ReLoad():
     global vuln
     try:
@@ -1549,12 +1606,13 @@ def ReLoad():
         messagebox.showinfo(title='提示', message='重新加载失败')
         return
 
+#显示漏洞测试界面
 def Check():
     gui.frmPOC.grid_remove()
     gui.frmEXP.grid_remove()
     gui.frmCheck.grid(row=1, column=0, padx=2, pady=2)
 
-
+#显示漏洞利用界面
 def EXP():
     gui.frmPOC.grid_remove()
     gui.frmCheck.grid_remove()
@@ -1562,6 +1620,7 @@ def EXP():
     sys.stdout = TextRedirector(exp.TexBOT_1_2, "stdout", index="2")
     sys.stderr = TextRedirector(exp.TexBOT_1_2, "stderr", index="2")
 
+#显示漏洞扫描界面
 def POC():
     gui.frmEXP.grid_remove()
     gui.frmCheck.grid_remove()
@@ -1569,18 +1628,19 @@ def POC():
     sys.stdout = TextRedirector(gui.TexB, "stdout")
     sys.stderr = TextRedirector(gui.TexB, "stderr")
 
+#创建多个存储POC脚本的界面, 默认为1, 2, 3, 4
 def Area_POC(index):
     for i in range(1,5):
         gui.frms['frmD_'+str(i)].grid_remove()
     gui.frms['frmD_'+str(index)].grid(row=1, column=1, padx=2, pady=2)
 
-
+#删除text组件的内容
 def delText(text):
     text.configure(state="normal")
     text.delete('1.0','end')
     text.configure(state="disabled")
 
-
+#漏洞利用界面getshell函数
 def GetShell(**kwargs):
     #print(kwargs)
 
@@ -1591,7 +1651,7 @@ def GetShell(**kwargs):
     kwargs['cmd'] = cmd
     exeCMD(**kwargs)
 
-
+#漏洞利用界面执行命令函数
 def exeCMD(**kwargs):
     global vuln_1,CMD
     if kwargs['url'] == '' or kwargs['cmd'] == '':
@@ -1608,6 +1668,8 @@ def exeCMD(**kwargs):
     end = time.time()
     print('[*]共花费时间：{} 秒'.format(seconds2hms(end - start)))
     #print(sys.modules)
+
+#预留功能函数
 def note():
     tkinter.messagebox.showinfo('提示','预留功能')
 
@@ -1623,19 +1685,21 @@ def callbackClose():
             gui.root.destroy()
         except:
             gui.root.destroy()
+
+#颜色输出函数
 def color(str, color='black', end='\n'):
     #自动添加\n换行符号,方便自动换行
     sys.stdout.Colored(str+'\n', color, end)
 ###全局函数定义###
 
-###EXP运行环境配置###
-VULN = True
-DEBUG = None
-DELAY = 0
-TIMEOUT = 10
-OUTPUT = None
-CMD = "echo VuLnEcHoPoCSuCCeSS"
-RUNALLPOC = False
+#EXP运行环境配置
+VULN = True#决策是漏洞验证还是命令执行
+DEBUG = None#开启调试模式，输出返回信息
+DELAY = 0#延迟输出
+TIMEOUT = 10#请求超时
+OUTPUT = None#结果输出到文本中
+CMD = "echo VuLnEcHoPoCSuCCeSS"#默认命令，用于漏洞存在测试
+RUNALLPOC = False#运行所有脚本
 ###EXP运行环境配置###
 ###漏洞名称和具体的CVE对应###
 VUL_EXP = {
@@ -1672,27 +1736,25 @@ headers = {
 }
 ###默认的头部字段###
 
-###环境变量###
-PROXY_TYPE = {"SOCKS4":1,"SOCKS5":2,"HTTP":3}
+###全局环境变量###
+PROXY_TYPE = {"SOCKS4":1,"SOCKS5":2,"HTTP":3}#代理设置全局变量
 threadLock = threading.Lock()#线程锁
+threadList = []#线程列表
 scripts = []#lib下的脚本文件列表
 exp_scripts = []#EXP下的脚本
 exp_scripts_cve = ['ALL']#EXP下的脚本下的CVE编号
-threadList = []#线程列表
-var = []#变量列表
-row = 1#动态创建button控件
-path = ''#python第三方库路径
-wait_index = 0#wait_running
-Checkbutton_text = ''
-now_text = ''
-vuln = None#初始化调用flag
-vuln_1 = None#初始化调用flag
-verify = Verification()#标准输出
-Colored_ = Colored()#颜色对象
-now = Timed()#时间对象
-github_now = None
+var = []#用于生成checkbutton处
+row = 1#用于生成checkbutton处
+wait_index = 0#用于wait_running函数
+Checkbutton_text = ''#选中的checkbutton,代表执行的POC脚本名称
+now_text = ''#存储多目标文本
+vuln = None#当前正在执行的POC脚本对象
+vuln_1 = None#当前正在执行的EXP脚本对象
+verify = Verification()#漏洞验证对象
+Colored_ = Colored()#颜色输出对象
+now = Timed()#时间输出对象
 Get_type = ['GET','POST']#请求类型
-###环境变量###
+###全局环境变量###
 
 ###添加python环境的第三方库###
 curPath = os.path.dirname(os.path.realpath(sys.executable))#当前执行路径
@@ -1700,15 +1762,11 @@ scriptPath = os.getcwd()
 libPath = scriptPath+'/lib'
 scriptLib = scriptPath+'/POC'
 #追加搜索路径
-sys.path.append(libPath)
 sys.path.append(curPath)
 sys.path.append(scriptPath)
+sys.path.append(libPath)
 sys.path.append(scriptLib)
 ###添加python环境的第三方库###
-#内置函数
-bifs = dir(__builtins__)
-#关键字
-kws = kwlist
 
 if __name__ == "__main__":
     gui = MyGUI()
@@ -1718,37 +1776,57 @@ if __name__ == "__main__":
     s.configure('Treeview', rowheight=18) # repace 40 with whatever you need
 
     ###定义组键初值###
-    EntA_1_V = StringVar()#目标地址输入框
-    EntA_2_V = StringVar()#Cookie输入框
-    EntA_4_V = StringVar()#IP地址输入框
-    EntA_5_V = StringVar()#Port输入框
-    EntA_6_V = StringVar()#线程输入框
-    EntA_7_V = StringVar()#第三模块URL输入框
-    EntABOT_1_V = StringVar()#CMD命令输入框
-    comvalue = StringVar()#代理类型输入框
-    comvalue_1 = StringVar()#漏洞名称输入框
-    comvalue_2 = StringVar()#调用方法
-    comvalue_3 = StringVar()#请求方法类型
-    CheckVar1 = IntVar()#控制代理开关1
-    CheckVar2 = IntVar()#控制代理开关0
-    ###设置初值###
+    #漏洞扫描界面
+    EntA_6_V = StringVar()#漏洞扫描界面_线程输入框
     EntA_6_V.set('3')#初始化为3
-    comvalue.set("SOCKS5")
-    comvalue_1.set("请选择漏洞名称")
-    comvalue_2.set("ALL")
-    comvalue_3.set("GET")
-
+    comvalue = StringVar()#漏洞扫描界面_代理类型输入框
+    comvalue.set("SOCKS5")#初始化为SOCKS5
+    CheckVar1 = IntVar()#漏洞扫描界面_控制代理开关1
+    CheckVar2 = IntVar()#漏洞扫描界面_控制代理开关0
     addr = StringVar(value='127.0.0.1')#代理IP
     port = StringVar(value='10086')#代理端口
-    variable_dict = {"CheckVar1":CheckVar1, "CheckVar2":CheckVar2, "PROXY_TYPE":comvalue, "addr":addr, "port":port}#这里我们声明的变量全部应该写在主窗口生成后
     temp = socket.socket#去掉全局代理
-    ###定义组键初值###
+    variable_dict = {"CheckVar1":CheckVar1, 
+                "CheckVar2":CheckVar2, 
+                "PROXY_TYPE":comvalue, 
+                "addr":addr,
+                "port":port}#这里我们声明的变量全部应该写在主窗口生成后
     
+    #漏洞利用界面
+    EntA_1_V = StringVar()#漏洞利用界面_目标地址输入框
+    EntA_2_V = StringVar()#漏洞利用界面_Cookie输入框
+    EntA_4_V = StringVar()#漏洞利用界面_IP地址输入框
+    EntA_5_V = StringVar()#漏洞利用界面_Port输入框
+    EntABOT_1_V = StringVar()#漏洞利用界面_CMD命令输入框
+    comvalue_1 = StringVar()#漏洞利用界面_漏洞名称输入框
+    comvalue_1.set("请选择漏洞名称")
+    comvalue_2 = StringVar()#漏洞利用界面_调用方法
+    comvalue_2.set("ALL")
+
+    #漏洞测试界面
+    EntA_7_V = StringVar()#漏洞测试界面_URL输入框
+    EntA_8_V = StringVar()#漏洞测试界面_CMS名称
+    EntA_9_V = StringVar()#漏洞测试界面_CVE编号
+    EntA_10_V = StringVar()#漏洞测试界面_版本信息
+    comvalue_4 = StringVar()#漏洞测试界面_info
+    comvalue_4.set('命令执行描述')
+    comvalue_5 = StringVar()#漏洞测试界面_info
+    comvalue_5.set('请选择模板')
+    comvalue_3 = StringVar()#漏洞测试界面_请求方法类型
+    comvalue_3.set("GET")
+
+
+    ###定义组键初值###
+
+    #生成漏洞扫描界面    
     gui.start()
+    #生成漏洞利用界面
     exp = MyEXP(gui.root,gui.frmEXP)
-    mycheck = Mycheck(gui.root, gui.frmCheck)
     exp.start()
+    #生成漏洞测试界面
+    mycheck = Mycheck(gui.root, gui.frmCheck)
     mycheck.start()
+
     str1 = '''[*]请输入正确的网址,比如 [http://www.baidu.com]
 [*]请注意有些需要使用域名, 有些需要使用IP!
 [*]漏洞扫描模块是检测漏洞的, 命令执行需要在漏洞利用模块使用!

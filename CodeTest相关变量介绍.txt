@@ -1,13 +1,14 @@
-class MyGUI#主界面类
-class TextRedirector()#重定向输出类
+class MyGUI()#主界面类包含漏洞扫描界面
 class TopProxy()#顶层代理界面类
 class Loadfile()#加载多目标类
 class Topfile()#编辑代码界面类
-class MyEXP#漏洞利用界面类
-class Mycheck#漏洞测试界面类
+class MyEXP()#漏洞利用界面类
+class Mycheck()#漏洞测试界面类
+class CreateExp()#根据模板生成EXP类
 class Timed()#时间类
 class Colored()#颜色类
 class Verification()#漏洞利用界面验证类
+class TextRedirector()#重定向输出类
 class Job()#运行状态线程类
 
 callCheckbutton()#调用checkbutton按钮
