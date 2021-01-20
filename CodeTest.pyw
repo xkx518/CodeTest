@@ -6,6 +6,8 @@ from tkinter.filedialog import askopenfilename
 from keyword import kwlist
 from exp10it import seconds2hms
 from colorama import init, Fore, Back, Style
+from jinja2 import Environment, PackageLoader
+from urllib.parse import urlparse
 from concurrent.futures import ThreadPoolExecutor,wait,as_completed,ALL_COMPLETED
 import os,sys,time,socket,socks,datetime
 import tkinter.filedialog,importlib,glob,requests
@@ -765,11 +767,12 @@ class Mycheck:
         self.frmright.grid_propagate(0)
 
     def CreateFirst(self):
-        self.checkbutton_1 = Button(self.frmTOP, text='发送', width=10, command=lambda :self.thread_it(self._request))
-        self.checkbutton_2 = Button(self.frmTOP, text='生成EXP', width=10, command=lambda :CreateExp(gui.root))
+        self.checkbutton_1 = Button(self.frmTOP, text='发送', width=10, activebackground = "blue", command=lambda :self.thread_it(self._request))
+        self.checkbutton_2 = Button(self.frmTOP, text='生成EXP', width=10, activebackground = "blue", command=lambda :CreateExp(gui.root))
 
-        self.checkbutton_1.grid(row=0, column=0, padx=1, pady=1)
-        self.checkbutton_2.grid(row=0, column=1, padx=1, pady=1)
+        self.checkbutton_1.grid(row=0, column=0, padx=1, pady=1, sticky='e')
+        #self.checkbutton_1.pack(x=20,y=30,width=30,height=40)
+        self.checkbutton_2.grid(row=0, column=1, padx=1, pady=1, sticky='e')
 
     def CreateSecond(self):
         self.label_1 = Label(self.frmleft_1, text="请求方法")
@@ -1037,22 +1040,27 @@ class CreateExp():
         self.frm_A_1.grid_propagate(0)
         self.frm_A_2.grid_propagate(0)
 
-        self.Lab_A_1_1 = Label(self.frm_A_1, text='CMS名称')#显示
+        self.Lab_A_1_1 = Label(self.frm_A_1, text='脚本名称')#显示
         self.Ent_A_1_1 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_8_V) #接受输入控件
         self.Lab_A_1_1.grid(row=0, column=0,padx=20, pady=10, sticky=W)
         self.Ent_A_1_1.grid(row=0, column=1,padx=20, pady=10, sticky=W)
 
-        self.Lab_A_1_2 = Label(self.frm_A_1, text='CVE编号')#显示
+        self.Lab_A_1_2 = Label(self.frm_A_1, text='CMS名称')#显示
         self.Ent_A_1_2 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_9_V) #接受输入控件
         self.Lab_A_1_2.grid(row=1, column=0,padx=20, pady=10, sticky=W)
         self.Ent_A_1_2.grid(row=1, column=1,padx=20, pady=10, sticky=W)
 
-        self.Lab_A_1_3 = Label(self.frm_A_1, text='版本信息')#显示
+        self.Lab_A_1_3 = Label(self.frm_A_1, text='CVE编号')#显示
         self.Ent_A_1_3 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_10_V) #接受输入控件
         self.Lab_A_1_3.grid(row=2, column=0,padx=20, pady=10, sticky=W)
         self.Ent_A_1_3.grid(row=2, column=1,padx=20, pady=10, sticky=W)
 
-        self.Lab_A_1_4 = Label(self.frm_A_1, text='info')#显示
+        self.Lab_A_1_4 = Label(self.frm_A_1, text='版本信息')#显示
+        self.Ent_A_1_4 = Entry(self.frm_A_1, width='50', highlightcolor='red', highlightthickness=1, textvariable=EntA_11_V) #接受输入控件
+        self.Lab_A_1_4.grid(row=3, column=0,padx=20, pady=10, sticky=W)
+        self.Ent_A_1_4.grid(row=3, column=1,padx=20, pady=10, sticky=W)
+
+        self.Lab_A_1_5 = Label(self.frm_A_1, text='info')#显示
         self.comboxlist_A_1_4 = ttk.Combobox(self.frm_A_1,width=20,textvariable=comvalue_4,state='readonly') #接受输入控件
         self.comboxlist_A_1_4["values"] = tuple(["[rce]","[deserialization rce]",
                                             "[upload]",
@@ -1062,8 +1070,8 @@ class CreateExp():
                                             "[xxe]",
                                             "[sql]",
                                             "[ssrf]"])
-        self.Lab_A_1_4.grid(row=3, column=0,padx=20, pady=10, sticky=W)
-        self.comboxlist_A_1_4.grid(row=3, column=1,padx=20, pady=10, sticky=W)
+        self.Lab_A_1_5.grid(row=4, column=0,padx=20, pady=10, sticky=W)
+        self.comboxlist_A_1_4.grid(row=4, column=1,padx=20, pady=10, sticky=W)
 
         #左下左
         self.frm_A_2_1 = Frame(self.frm_A_2, width=425, height=300,bg='whitesmoke')
@@ -1100,9 +1108,12 @@ class CreateExp():
 
         self.comboxlist_B = ttk.Combobox(self.frm_B_1,width=20,textvariable=comvalue_5,state='readonly') #接受输入控件
         self.comboxlist_B['values'] = tuple(['POC','EXP'])
-        self.button_3 = Button(self.frm_B_1, text='保存EXP', width=6, command=self.newrow)
+        self.comboxlist_B.bind("<<ComboboxSelected>>", self.SelectTemplate)
+        self.button_3 = Button(self.frm_B_1, text='生成EXP', width=6, command=self.Creat_from_temp)
+        self.button_4 = Button(self.frm_B_1, text='保存EXP', width=6, command=self.Save_from_temp)
         self.comboxlist_B.grid(row=0, column=0, padx=1, pady=1, sticky=W)
         self.button_3.grid(row=0, column=1, padx=1, pady=1, sticky=W)
+        self.button_4.grid(row=0, column=2, padx=1, pady=1, sticky=W)
 
         self.text_B = Text(self.frm_B_2, font=("consolas",10), width=61, height=37)
         self.Scr_B = Scrollbar(self.frm_B_2)  #滚动条控件
@@ -1112,7 +1123,99 @@ class CreateExp():
         self.text_B.config(yscrollcommand=self.Scr_B.set)
 
 
+    def Creat_from_temp(self):
+        try:
+            self.text_B.delete('1.0','end')
+            env = Environment(loader=PackageLoader('Template', './'))
+            template = env.get_template(self.comboxlist_B.get()+'.j2')
+            url = EntA_7_V.get().strip('\n')
+            if url == '':
+                messagebox.showinfo(title='提示', message='没有获取到URL')
+                return
+            header = dict(zip(mycheck.Type, mycheck.Value))
+            headers = {}
+            for key, value in header.items():
+                if key and value:
+                    headers.update({key : value})
+
+            temp_1 = {'Code':'str(self.request.status_code)', 'HTTP头':'str(self.request.headers)', 'HTTP正文':'self.request.text'}
+            temp_2 = {'包含': 'in', 'Not Contains':'not in'}
+
+            var = [temp_1[i] if i in temp_1 else i for i in self.variable]
+            oper = [temp_2[i] if i in temp_2 else i for i in self.operation]
+
+            str_2 = ''
+            for i in range(len(self.Value)):
+                if self.logic[i] == '':
+                    str_1 = "r\"" + self.Value[i] + "\"" + " " + oper[i] + " " + var[i]
+                    str_2 = str_2 + str_1
+                    break
+                else:
+                    str_1 = "r\"" + self.Value[i] + "\"" + " " + oper[i] + " " + var[i] + " " + self.logic[i].lower() + " "
+                    str_2 = str_2 + str_1
+            str_2 = "if "+str_2+":"
+
+            service={
+                        "entry_nodes":
+                            {
+                                "cmsname": EntA_9_V.get().replace(' ','').strip('\n'),
+                                "cvename": EntA_10_V.get().replace(' ','').strip('\n'),
+                                "banner": EntA_11_V.get().strip('\n'),
+                                "infoname": comvalue_4.get(),
+                                "condition": str_2
+                            },
+                        "header_nodes":
+                            {
+                                "headinfo":
+                                    {
+                                        "method": comvalue_3.get().lower(),
+                                        "path": url[url.index(urlparse(url).netloc)+len(urlparse(url).netloc):],
+                                        "header": headers
+                                    },
+                                "content":
+                                    {   "data": mycheck.Text_post.get('0.0','end').strip('\n')}
+                                
+                            }
+                    }
+            content = template.render(service=service)
+            self.text_B.insert(INSERT, content)
+        except Exception as error:
+            messagebox.showinfo(title='错误', message=error)
+
+    def Save_from_temp(self):
+        global exp_scripts
+        save_data = str(self.text_B.get('0.0','end').strip('\n'))
+        if save_data == '':
+            messagebox.showinfo(title='提示', message='没有数据')
+            return
+        try:
+            fobj_w = open('./EXP/'+EntA_8_V.get()+'.py', 'w',encoding='utf-8')
+            fobj_w.writelines(save_data)
+            fobj_w.close()
+            exp_scripts.append(EntA_8_V.get())
+            exp.comboxlist_3["values"] = tuple(exp_scripts)
+            messagebox.showinfo(title='结果', message='保存成功')
+        except Exception as error:
+            messagebox.showinfo(title='错误', message=error)
+
+
+
+    def SelectTemplate(self,event):
+        self.Template_name = './Template/'+self.comboxlist_B.get()+'.j2'
+        self.text_B.delete('1.0','end')
+        try:
+            with open(self.Template_name, mode='r', encoding='utf-8') as f:
+                array = f.readlines()
+                for i in array: #遍历array中的每个元素
+                    self.text_B.insert(INSERT, i)
+        except FileNotFoundError as error:
+            messagebox.showinfo(title='文件未找到', message=error)
+        except Exception as error:
+            messagebox.showinfo(title='错误', message=error)
+            
+
     def set_cell_value(self, event):
+        item_text = None
         for self.item in self.treeview_A_2.selection():
         #item = I001
             item_text = self.treeview_A_2.item(self.item, "values")
@@ -1122,32 +1225,32 @@ class CreateExp():
         cn = int(str(self.column).replace('#',''))
         rn = math.floor(math.floor(event.y-25)/18)+1
 
-        if cn == 4:
+        if cn == 4 and item_text:
             self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
-            self.tempCom['values'] = tuple(['AND','OR'])
+            self.tempCom['values'] = tuple(['AND','OR',''])
             self.tempCom.current(0)
             self.tempCom.bind("<<ComboboxSelected>>", self.saveCom)
 
             self.tempCom.place(x=2*self.treeview_A_2.column("变量")["width"]+self.treeview_A_2.column("值")["width"],
                             y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
                             height=18)
-        elif cn == 3:
+        elif cn == 3 and item_text:
             self.entryedit = Text(self.frm_A_2_1, font=("consolas",10))
             self.entryedit.insert(INSERT, item_text[cn-1])
             self.entryedit.bind('<FocusOut>',self.saveentry)
             self.entryedit.place(x=2*self.treeview_A_2.column("变量")["width"],
                             y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
                             height=18)
-        elif cn == 2:
+        elif cn == 2 and item_text:
             self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
-            self.tempCom['values'] = tuple(['包含','Not Contains','Regex','==','!=','>','<','>=','<='])
+            self.tempCom['values'] = tuple(['包含','Not Contains','==','!=','>','<','>=','<='])
             self.tempCom.current(0)
             self.tempCom.bind("<<ComboboxSelected>>", self.saveCom)
 
             self.tempCom.place(x=self.treeview_A_2.column("变量")["width"],
                             y=25+(rn-1)*18,width=self.treeview_A_2.column(self.columns[cn-1])["width"],
                             height=18)
-        elif cn == 1:
+        elif cn == 1 and item_text:
             self.tempCom = ttk.Combobox(self.frm_A_2_1, font=("consolas",10), state='readonly')
             self.tempCom['values'] = tuple(['Code','HTTP头','HTTP正文'])
             self.tempCom.current(0)
@@ -1805,9 +1908,10 @@ if __name__ == "__main__":
 
     #漏洞测试界面
     EntA_7_V = StringVar()#漏洞测试界面_URL输入框
-    EntA_8_V = StringVar()#漏洞测试界面_CMS名称
-    EntA_9_V = StringVar()#漏洞测试界面_CVE编号
-    EntA_10_V = StringVar()#漏洞测试界面_版本信息
+    EntA_8_V = StringVar()#漏洞测试界面_脚本名称
+    EntA_9_V = StringVar()#漏洞测试界面_CMS名称
+    EntA_10_V = StringVar()#漏洞测试界面_CVE编号
+    EntA_11_V = StringVar()#漏洞测试界面_版本信息
     comvalue_4 = StringVar()#漏洞测试界面_info
     comvalue_4.set('命令执行描述')
     comvalue_5 = StringVar()#漏洞测试界面_info

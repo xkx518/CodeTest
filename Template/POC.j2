@@ -1,0 +1,67 @@
+from ClassCongregation import _urlparse
+from requests_toolbelt.utils import dump
+import prettytable as pt
+import requests,re
+import CodeTest
+################
+##--{{service.entry_nodes.cmsname}}--##
+#{{service.entry_nodes.cvename}}  {{service.entry_nodes.infoname}}，默认VULN = None
+################
+#echo VuLnEcHoPoCSuCCeSS
+#VULN = None => 漏洞测试
+#VULN = True => 命令执行
+CodeTest.VULN = None
+TIMEOUT = 5
+
+class {{service.entry_nodes.cmsname}}():
+    def __init__(self, url, CMD):
+        self.url = url
+        self.CMD = CMD
+            
+    def _{{service.entry_nodes.cvename}}(self):
+        self.pocname = "{{service.entry_nodes.cmsname}}:{{service.entry_nodes.cvename}}"
+        self.method = "{{service.header_nodes.headinfo.method}}"
+        self.rawdata = "null"
+        self.info = "{{service.entry_nodes.infoname}}"
+        self.r = "PoCWating"
+
+        self.path = "{{service.header_nodes.headinfo.path}}"
+        self.data = "{{service.header_nodes.content.data}}"
+        self.headers = {{service.header_nodes.headinfo.header}}
+        try:
+            if CodeTest.VULN is None:
+                self.request = requests.{{service.header_nodes.headinfo.method}}(self.url + self.path, data=self.data, headers=self.headers, timeout=TIMEOUT, verify=False)
+                self.rawdata = dump.dump_all(self.request).decode('utf-8','ignore')
+                {{service.entry_nodes.condition}}
+                    self.r = "PoCSuCCeSS"
+                    CodeTest.verify.generic_output(self.r, self.pocname, self.method, self.rawdata, self.info)
+                else:
+                    CodeTest.verify.generic_output(self.request.text, self.pocname, self.method, self.rawdata, self.info)
+            else:
+                self.request = requests.{{service.header_nodes.headinfo.method}}(self.url + self.path, data=self.data, headers=self.headers, timeout=TIMEOUT, verify=False)
+                CodeTest.verify.generic_output(self.request.text, self.pocname, self.method, self.rawdata, self.info)
+        except requests.exceptions.Timeout as error:
+            CodeTest.verify.timeout_output(self.pocname)
+        except requests.exceptions.ConnectionError as error:
+            CodeTest.verify.connection_output(self.pocname)
+        except Exception as error:
+            CodeTest.verify.generic_output(str(error), self.pocname, self.method, self.rawdata, self.info)
+
+tb = pt.PrettyTable()
+tb.field_names = ["Target type", "Vuln Name", "Poc", "Exp", "Impact Version && Vulnerability description"]
+tb.align['Target type'] = 'l'
+tb.align['Vuln Name'] = 'l'
+tb.align['Impact Version && Vulnerability description'] = 'l'
+print_result = ("{{service.entry_nodes.cmsname}}", "{{service.entry_nodes.cvename}}" ,"N" ,"Y" ,"{{service.entry_nodes.banner}}, {{service.entry_nodes.infoname}}")
+tb.add_row(print_result)
+print(tb)
+
+def check(**kwargs):
+    if CodeTest.VULN == None:
+        Exp{{service.entry_nodes.cmsname}} = {{service.entry_nodes.cmsname}}(_urlparse(kwargs['url']),"echo VuLnEcHoPoCSuCCeSS")
+    else:
+        Exp{{service.entry_nodes.cmsname}} = {{service.entry_nodes.cmsname}}(_urlparse(kwargs['url']),kwargs['cmd'])
+    if kwargs['pocname'] == "_{{service.entry_nodes.cvename}}":
+        Exp{{service.entry_nodes.cmsname}}._{{service.entry_nodes.cvename}}()
+    else:
+        Exp{{service.entry_nodes.cmsname}}._{{service.entry_nodes.cvename}}()
