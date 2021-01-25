@@ -9,7 +9,7 @@ import CodeTest
 #echo VuLnEcHoPoCSuCCeSS
 #VULN = None => 漏洞测试
 #VULN = True => 命令执行
-CodeTest.VULN = True
+CodeTest.VULN = None
 TIMEOUT = 10
 class ApacheUnomi():
     def __init__(self, url, CMD):
@@ -65,3 +65,4 @@ def check(**kwargs):
         ExpApacheUnomi.cve_2020_13942()
     else:
         ExpApacheUnomi.cve_2020_13942()
+
